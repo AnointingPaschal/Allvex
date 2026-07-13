@@ -1,5 +1,7 @@
 import { Routes, Route, useLocation } from "react-router-dom";
 import BottomNav from "./components/BottomNav.jsx";
+import RequireAuth from "./components/RequireAuth.jsx";
+import RequireRole from "./components/RequireRole.jsx";
 import Onboarding from "./pages/Onboarding.jsx";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
@@ -27,11 +29,11 @@ export default function App() {
   if (isPortal) {
     return (
       <Routes>
-        <Route path="/portals" element={<PortalHub />} />
-        <Route path="/admin" element={<AdminPortal />} />
-        <Route path="/supplier" element={<SupplierPortal />} />
-        <Route path="/inspector" element={<InspectorPortal />} />
-        <Route path="/support" element={<SupportPortal />} />
+        <Route path="/portals" element={<RequireAuth><PortalHub /></RequireAuth>} />
+        <Route path="/admin" element={<RequireRole role="admin"><AdminPortal /></RequireRole>} />
+        <Route path="/supplier" element={<RequireRole role="supplier"><SupplierPortal /></RequireRole>} />
+        <Route path="/inspector" element={<RequireRole role="inspector"><InspectorPortal /></RequireRole>} />
+        <Route path="/support" element={<RequireRole role="support"><SupportPortal /></RequireRole>} />
       </Routes>
     );
   }
@@ -43,14 +45,14 @@ export default function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/" element={<Home />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/marketplace/:id" element={<VehicleDetails />} />
-          <Route path="/import" element={<ImportTracking />} />
-          <Route path="/garage" element={<Garage />} />
-          <Route path="/garage/:id" element={<GarageVehicle />} />
-          <Route path="/assistant" element={<Assistant />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/" element={<RequireAuth><Home /></RequireAuth>} />
+          <Route path="/marketplace" element={<RequireAuth><Marketplace /></RequireAuth>} />
+          <Route path="/marketplace/:id" element={<RequireAuth><VehicleDetails /></RequireAuth>} />
+          <Route path="/import" element={<RequireAuth><ImportTracking /></RequireAuth>} />
+          <Route path="/garage" element={<RequireAuth><Garage /></RequireAuth>} />
+          <Route path="/garage/:id" element={<RequireAuth><GarageVehicle /></RequireAuth>} />
+          <Route path="/assistant" element={<RequireAuth><Assistant /></RequireAuth>} />
+          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
         </Routes>
       </div>
       {!noNav && <BottomNav />}

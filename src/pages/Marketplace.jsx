@@ -1,20 +1,48 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, SlidersHorizontal, Heart, GitCompareArrows, BadgeCheck, ShoppingCart, Plus, Minus, X, Star, Check } from "lucide-react";
+import { Search, SlidersHorizontal, Heart, GitCompareArrows, BadgeCheck, ShoppingCart, Plus, Minus, X, Star, Check, Loader2 } from "lucide-react";
 import VehicleArt from "../components/VehicleArt.jsx";
-import { vehicles, accessories } from "../data/mock.js";
+import { supabase } from "../lib/supabase.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const categories = ["All", "SUV", "Sedan", "Electric", "Pickup", "Luxury"];
 
 export default function Marketplace() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState("vehicles"); // "vehicles" | "accessories"
+  const { profile } = useAuth();
+  const [tab, setTab] = useState("vehicles");
   const [active, setActive] = useState("All");
   const [query, setQuery] = useState("");
-  const [cart, setCart] = useState({}); // { [id]: qty }
+  const [cart, setCart] = useState({});
   const [showCart, setShowCart] = useState(false);
   const [justAdded, setJustAdded] = useState(null);
   const [checkoutDone, setCheckoutDone] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
+
+  const [loading, setLoading] = useState(true);
+  const [vehicles, setVehicles] = useState([]);
+  const [accessories, setAccessories] = useState([]);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const [vRes, aRes] = await Promise.all([
+        supabase.from("vehicles").select("*, vehicle_images(url,category,position)").eq("status", "live")
+          .order("position", { foreignTable: "vehicle_images" }),
+        supabase.from("accessories").select("*"),
+      ]);
+      setVehicles(
+        (vRes.data || []).map((v) => {
+          const imgs = v.vehicle_images || [];
+          const hero = imgs.find((i) => i.category === "exterior") || imgs[0];
+          return { ...v, image: hero?.url };
+        })
+      );
+      setAccessories(aRes.data || []);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const filtered = useMemo(() => {
     return vehicles.filter((v) => {
@@ -22,11 +50,11 @@ export default function Marketplace() {
       const matchesQuery = `${v.brand} ${v.model}`.toLowerCase().includes(query.toLowerCase());
       return matchesCat && matchesQuery;
     });
-  }, [active, query]);
+  }, [vehicles, active, query]);
 
   const filteredAccessories = useMemo(() => {
     return accessories.filter((a) => a.name.toLowerCase().includes(query.toLowerCase()));
-  }, [query]);
+  }, [accessories, query]);
 
   function addToCart(id) {
     setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
@@ -42,8 +70,40 @@ export default function Marketplace() {
   }
 
   const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
-  const cartItems = Object.entries(cart).map(([id, qty]) => ({ ...accessories.find((a) => a.id === Number(id)), qty }));
-  const cartTotal = cartItems.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const cartItems = Object.entries(cart).map(([id, qty]) => ({ ...accessories.find((a) => a.id === id), qty }));
+  const cartTotal = cartItems.reduce((sum, i) => sum + Number(i.price) * i.qty, 0);
+
+  async function checkout() {
+    if (!profile || cartItems.length === 0) return;
+    setCheckingOut(true);
+    const { data: order, error } = await supabase
+      .from("accessory_orders")
+      .insert({ customer_id: profile.id, total: cartTotal, status: "placed" })
+      .select()
+      .single();
+
+    if (!error && order) {
+      await supabase.from("accessory_order_items").insert(
+        cartItems.map((i) => ({ order_id: order.id, accessory_id: i.id, quantity: i.qty, unit_price: i.price }))
+      );
+    }
+
+    setCheckingOut(false);
+    setCheckoutDone(true);
+    setCart({});
+    setTimeout(() => {
+      setShowCart(false);
+      setCheckoutDone(false);
+    }, 2200);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 size={22} className="animate-spin text-electric" />
+      </div>
+    );
+  }
 
   return (
     <div className="pb-8">
@@ -62,7 +122,6 @@ export default function Marketplace() {
           )}
         </div>
 
-        {/* Shop tabs */}
         <div className="flex gap-2 mb-3">
           <button
             onClick={() => setTab("vehicles")}
@@ -112,7 +171,6 @@ export default function Marketplace() {
         )}
       </div>
 
-      {/* VEHICLES TAB */}
       {tab === "vehicles" && (
         <>
           <div className="px-4 sm:px-6 lg:px-8 mt-3.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -137,7 +195,7 @@ export default function Marketplace() {
                   <p className="font-semibold text-midnight text-[11.5px] truncate">{v.brand} {v.model}</p>
                   <p className="text-[9.5px] text-slate-400 mt-0.5">{v.year} · {v.fuel}</p>
                   <p className="text-[11.5px] font-bold text-midnight mt-1">₦{(v.price / 1000000).toFixed(1)}m</p>
-                  <p className="text-[9px] text-slate-400 mt-0.5">Est. landing · {v.delivery}</p>
+                  <p className="text-[9px] text-slate-400 mt-0.5">Est. landing · {v.delivery_estimate}</p>
                   <button className="tap mt-1.5 flex items-center gap-1 text-[9.5px] font-semibold text-electric">
                     <GitCompareArrows size={10} /> Compare
                   </button>
@@ -153,31 +211,26 @@ export default function Marketplace() {
         </>
       )}
 
-      {/* ACCESSORIES TAB */}
       {tab === "accessories" && (
         <>
           <div className="px-4 sm:px-6 lg:px-8 mt-3.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {filteredAccessories.map((a) => (
               <div key={a.id} className="bg-white rounded-xl shadow-card overflow-hidden flex flex-col">
-                <VehicleArt category="default" src={a.image} className="h-24 w-full" iconSize={22} />
+                <VehicleArt category="default" src={a.image_url} className="h-24 w-full" iconSize={22} />
                 <div className="p-2.5 flex-1 flex flex-col">
                   <p className="font-semibold text-midnight text-[11.5px] truncate">{a.name}</p>
                   <div className="flex items-center gap-1 mt-0.5">
                     <Star size={10} className="text-warning fill-warning" />
                     <span className="text-[9.5px] text-slate-400">{a.rating}</span>
                   </div>
-                  <p className="text-[12px] font-bold text-electric mt-1">₦{a.price.toLocaleString()}</p>
+                  <p className="text-[12px] font-bold text-electric mt-1">₦{Number(a.price).toLocaleString()}</p>
                   <button
                     onClick={() => addToCart(a.id)}
                     className={`tap mt-2 w-full py-2 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 ${
                       justAdded === a.id ? "bg-success text-white" : "bg-midnight text-white"
                     }`}
                   >
-                    {justAdded === a.id ? (
-                      <><Check size={12} /> Added</>
-                    ) : (
-                      <><Plus size={12} /> Add to Cart</>
-                    )}
+                    {justAdded === a.id ? (<><Check size={12} /> Added</>) : (<><Plus size={12} /> Add to Cart</>)}
                   </button>
                 </div>
               </div>
@@ -189,7 +242,6 @@ export default function Marketplace() {
             </div>
           )}
 
-          {/* Floating cart button */}
           {cartCount > 0 && (
             <button
               onClick={() => setShowCart(true)}
@@ -202,7 +254,6 @@ export default function Marketplace() {
         </>
       )}
 
-      {/* Cart drawer */}
       {showCart && (
         <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50" onClick={() => setShowCart(false)}>
           <div onClick={(e) => e.stopPropagation()} className="bg-white w-full sm:w-[420px] sm:rounded-xl rounded-t-[24px] p-5 pb-7 max-h-[80vh] overflow-y-auto">
@@ -227,10 +278,10 @@ export default function Marketplace() {
               <div className="flex flex-col gap-3">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex items-center gap-3">
-                    <VehicleArt category="default" src={item.image} className="w-14 h-14 rounded-lg shrink-0" iconSize={16} />
+                    <VehicleArt category="default" src={item.image_url} className="w-14 h-14 rounded-lg shrink-0" iconSize={16} />
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-semibold text-midnight truncate">{item.name}</p>
-                      <p className="text-[11.5px] font-bold text-electric mt-0.5">₦{item.price.toLocaleString()}</p>
+                      <p className="text-[11.5px] font-bold text-electric mt-0.5">₦{Number(item.price).toLocaleString()}</p>
                     </div>
                     <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-1.5 py-1">
                       <button onClick={() => changeQty(item.id, -1)} className="tap w-6 h-6 flex items-center justify-center">
@@ -251,9 +302,11 @@ export default function Marketplace() {
 
                 <button
                   onClick={checkout}
-                  className="tap w-full py-3 rounded-xl bg-electric text-white font-semibold text-[13px] mt-1"
+                  disabled={checkingOut}
+                  className="tap w-full py-3 rounded-xl bg-electric text-white font-semibold text-[13px] mt-1 flex items-center justify-center gap-2 disabled:opacity-60"
                 >
-                  Checkout
+                  {checkingOut && <Loader2 size={14} className="animate-spin" />}
+                  {checkingOut ? "Placing order..." : "Checkout"}
                 </button>
               </div>
             )}

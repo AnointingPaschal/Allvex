@@ -43,7 +43,7 @@ export default function HeroCarousel({ vehicles }) {
             <div className="absolute bottom-3 left-3.5 right-3.5 flex items-end justify-between text-left">
               <div>
                 <p className="text-white font-bold text-[13.5px] leading-tight">{v.brand} {v.model}</p>
-                <p className="text-slate-200 text-[10.5px] mt-0.5">{v.year} · {v.fuel} · {v.delivery}</p>
+                <p className="text-slate-200 text-[10.5px] mt-0.5">{v.year} · {v.fuel} · {v.delivery_estimate}</p>
               </div>
               <p className="text-white font-bold text-[13px] shrink-0">₦{(v.price / 1000000).toFixed(1)}m</p>
             </div>

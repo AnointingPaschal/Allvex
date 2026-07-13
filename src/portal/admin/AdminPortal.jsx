@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "../DashboardLayout.jsx";
 import { KpiCard, Badge, Panel, Table, Td, Button } from "../ui.jsx";
 import {
-  LayoutGrid, Users, Truck, Building2, Car, ClipboardCheck, Newspaper, Search,
-  Wallet, PackageCheck, TriangleAlert,
+  LayoutGrid, Users, Truck, Car, ClipboardCheck, Newspaper, Search,
+  Wallet, PackageCheck, TriangleAlert, Loader2,
 } from "lucide-react";
-import { customers, adminOrders, suppliers, inspectors, adminVehicles, articles } from "../../data/portalMock.js";
+import { supabase } from "../../lib/supabase.js";
 
 const sections = [
   { key: "overview", label: "Overview", icon: LayoutGrid },
@@ -17,8 +17,11 @@ const sections = [
   { key: "content", label: "Content", icon: Newspaper },
 ];
 
-const orderTone = { in_progress: "info", attention: "warning", action_needed: "danger", completed: "success" };
-const orderLabel = { in_progress: "In Progress", attention: "Needs Attention", action_needed: "Action Needed", completed: "Completed" };
+const orderTone = {
+  inquiry_submitted: "info", quote_sent: "info", deposit_paid: "info", vehicle_purchased: "info",
+  container_booked: "info", container_loaded: "info", at_sea: "info", arrived_port: "warning",
+  customs_clearance: "warning", ready_for_delivery: "success", delivered: "success", cancelled: "danger",
+};
 
 export default function AdminPortal() {
   const [active, setActive] = useState("overview");
@@ -44,24 +47,58 @@ export default function AdminPortal() {
   );
 }
 
+function useLoad(fn, deps = []) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fn().then((res) => { if (!cancelled) { setData(res); setLoading(false); } });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [...deps, reload]);
+  return [data, loading, () => setReload((r) => r + 1)];
+}
+
+function Spinner() {
+  return <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-electric" /></div>;
+}
+
 function Overview() {
+  const [stats, loading] = useLoad(async () => {
+    const [customers, activeImports, orders, inspections, activity] = await Promise.all([
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "customer"),
+      supabase.from("import_orders").select("id", { count: "exact", head: true }).not("stage", "in", "(delivered,cancelled)"),
+      supabase.from("import_orders").select("id"),
+      supabase.from("inspections").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("import_orders").select("vehicle_label, stage, created_at").order("created_at", { ascending: false }).limit(4),
+    ]);
+    return {
+      customers: customers.count || 0,
+      activeImports: activeImports.count || 0,
+      pendingInspections: inspections.count || 0,
+      activity: activity.data || [],
+    };
+  });
+
+  if (loading) return <Spinner />;
+
   return (
     <div className="flex flex-col gap-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        <KpiCard label="Total Customers" value="1,284" sub="+42 this week" icon={Users} />
-        <KpiCard label="Active Imports" value="37" sub="+5 this week" icon={PackageCheck} />
-        <KpiCard label="Revenue (MTD)" value="₦412.8m" sub="+18% vs last month" icon={Wallet} />
-        <KpiCard label="Pending Inspections" value="6" icon={TriangleAlert} />
+        <KpiCard label="Total Customers" value={stats.customers} icon={Users} />
+        <KpiCard label="Active Imports" value={stats.activeImports} icon={PackageCheck} />
+        <KpiCard label="Pending Inspections" value={stats.pendingInspections} icon={TriangleAlert} />
+        <KpiCard label="Revenue" value="—" sub="Connect payments to track" icon={Wallet} />
       </div>
       <Panel title="Recent Activity">
         <div className="divide-y divide-slate-100">
-          {[
-            "Alex Johnson's BYD Seal Premium departed Shenzhen Port",
-            "Supplier Jiangsu Motor Group submitted 5 new vehicles for review",
-            "Inspector Chinedu Obi passed inspection for GAC GS8",
-            "New ticket TCK-3391 opened by Amaka Chukwu",
-          ].map((a, i) => (
-            <div key={i} className="px-5 py-3.5 text-[13px] text-slate-500">{a}</div>
+          {stats.activity.length === 0 && <p className="px-5 py-4 text-[13px] text-slate-400">No activity yet.</p>}
+          {stats.activity.map((a, i) => (
+            <div key={i} className="px-5 py-3.5 text-[13px] text-slate-500">
+              {a.vehicle_label} — {a.stage.replaceAll("_", " ")}
+            </div>
           ))}
         </div>
       </Panel>
@@ -70,126 +107,188 @@ function Overview() {
 }
 
 function Customers() {
+  const [customers, loading, reload] = useLoad(async () => {
+    const { data } = await supabase.from("profiles").select("*").eq("role", "customer").order("created_at", { ascending: false });
+    return data || [];
+  });
+  const [query, setQuery] = useState("");
+
+  async function toggleStatus(c) {
+    const next = c.status === "active" ? "suspended" : "active";
+    await supabase.from("profiles").update({ status: next }).eq("id", c.id);
+    reload();
+  }
+
+  if (loading) return <Spinner />;
+  const filtered = customers.filter((c) => c.full_name.toLowerCase().includes(query.toLowerCase()));
+
   return (
-    <Panel title="All Customers" action={<SearchBox placeholder="Search customers..." />}>
-      <Table columns={["Name", "Email", "Vehicles", "Active Orders", "Status", ""]}>
-        {customers.map((c) => (
+    <Panel title="All Customers" action={<SearchBox value={query} onChange={setQuery} placeholder="Search customers..." />}>
+      <Table columns={["Name", "Email", "Status", ""]}>
+        {filtered.map((c) => (
           <tr key={c.id}>
-            <Td bold>{c.name}</Td>
+            <Td bold>{c.full_name}</Td>
             <Td>{c.email}</Td>
-            <Td>{c.vehicles}</Td>
-            <Td>{c.activeOrders}</Td>
-            <Td><Badge tone={c.status === "Active" ? "success" : "danger"}>{c.status}</Badge></Td>
+            <Td><Badge tone={c.status === "active" ? "success" : "danger"}>{c.status}</Badge></Td>
             <Td>
-              <Button variant={c.status === "Active" ? "danger" : "ghost"}>
-                {c.status === "Active" ? "Suspend" : "Reinstate"}
+              <Button variant={c.status === "active" ? "danger" : "ghost"} onClick={() => toggleStatus(c)}>
+                {c.status === "active" ? "Suspend" : "Reinstate"}
               </Button>
             </Td>
           </tr>
         ))}
+        {filtered.length === 0 && <tr><Td colSpan={4}>No customers found.</Td></tr>}
       </Table>
     </Panel>
   );
 }
 
 function Imports() {
+  const [orders, loading] = useLoad(async () => {
+    const { data } = await supabase.from("import_orders").select("*, profiles(full_name)").order("created_at", { ascending: false });
+    return data || [];
+  });
+  if (loading) return <Spinner />;
+
   return (
-    <Panel title="All Import Orders" action={<SearchBox placeholder="Search order #..." />}>
-      <Table columns={["Order", "Customer", "Vehicle", "Stage", "ETA", "Status", ""]}>
-        {adminOrders.map((o) => (
+    <Panel title="All Import Orders">
+      <Table columns={["Order", "Customer", "Vehicle", "Stage", "Progress", ""]}>
+        {orders.map((o) => (
           <tr key={o.id}>
-            <Td bold>{o.id}</Td>
-            <Td>{o.customer}</Td>
-            <Td>{o.vehicle}</Td>
-            <Td>{o.stage}</Td>
-            <Td>{o.eta}</Td>
-            <Td><Badge tone={orderTone[o.status]}>{orderLabel[o.status]}</Badge></Td>
+            <Td bold>{o.order_number}</Td>
+            <Td>{o.profiles?.full_name || "—"}</Td>
+            <Td>{o.vehicle_label}</Td>
+            <Td><Badge tone={orderTone[o.stage] || "neutral"}>{o.stage.replaceAll("_", " ")}</Badge></Td>
+            <Td>{o.progress}%</Td>
             <Td><Button variant="ghost">View</Button></Td>
           </tr>
         ))}
+        {orders.length === 0 && <tr><Td colSpan={6}>No orders yet.</Td></tr>}
       </Table>
     </Panel>
   );
 }
 
 function Suppliers() {
+  const [suppliers, loading, reload] = useLoad(async () => {
+    const { data } = await supabase.from("suppliers").select("*, vehicles(count)").order("created_at", { ascending: false });
+    return data || [];
+  });
+
+  async function toggle(s) {
+    const next = s.status === "approved" ? "suspended" : "approved";
+    await supabase.from("suppliers").update({ status: next }).eq("id", s.id);
+    reload();
+  }
+
+  if (loading) return <Spinner />;
   return (
-    <Panel title="Suppliers" action={<Button>Invite Supplier</Button>}>
+    <Panel title="Suppliers">
       <Table columns={["Company", "Vehicles Listed", "Rating", "Status", ""]}>
         {suppliers.map((s) => (
           <tr key={s.id}>
-            <Td bold>{s.name}</Td>
-            <Td>{s.vehiclesListed}</Td>
+            <Td bold>{s.company_name}</Td>
+            <Td>{s.vehicles?.[0]?.count ?? 0}</Td>
             <Td>{s.rating} / 5</Td>
-            <Td><Badge tone={s.status === "Approved" ? "success" : "warning"}>{s.status}</Badge></Td>
-            <Td><Button variant={s.status === "Approved" ? "ghost" : "primary"}>{s.status === "Approved" ? "Manage" : "Review"}</Button></Td>
+            <Td><Badge tone={s.status === "approved" ? "success" : "warning"}>{s.status.replaceAll("_", " ")}</Badge></Td>
+            <Td><Button variant={s.status === "approved" ? "ghost" : "primary"} onClick={() => toggle(s)}>{s.status === "approved" ? "Suspend" : "Approve"}</Button></Td>
           </tr>
         ))}
+        {suppliers.length === 0 && <tr><Td colSpan={5}>No suppliers yet.</Td></tr>}
       </Table>
     </Panel>
   );
 }
 
 function Vehicles() {
+  const [vehicles, loading, reload] = useLoad(async () => {
+    const { data } = await supabase.from("vehicles").select("*").order("created_at", { ascending: false });
+    return data || [];
+  });
+
+  async function toggleVerified(v) {
+    await supabase.from("vehicles").update({ verified: !v.verified }).eq("id", v.id);
+    reload();
+  }
+
+  if (loading) return <Spinner />;
   return (
-    <Panel title="Marketplace Vehicles" action={<Button>Add Vehicle</Button>}>
+    <Panel title="Marketplace Vehicles">
       <Table columns={["Vehicle", "Brand", "Price", "Verified", "Status", ""]}>
-        {adminVehicles.map((v) => (
+        {vehicles.map((v) => (
           <tr key={v.id}>
-            <Td bold>{v.name}</Td>
+            <Td bold>{v.brand} {v.model}</Td>
             <Td>{v.brand}</Td>
-            <Td>{v.price}</Td>
+            <Td>₦{Number(v.price).toLocaleString()}</Td>
             <Td>{v.verified ? <Badge tone="success">Verified</Badge> : <Badge tone="neutral">Unverified</Badge>}</Td>
-            <Td><Badge tone={v.status === "Live" ? "success" : "warning"}>{v.status}</Badge></Td>
-            <Td><Button variant="ghost">Edit</Button></Td>
+            <Td><Badge tone={v.status === "live" ? "success" : "warning"}>{v.status.replaceAll("_", " ")}</Badge></Td>
+            <Td><Button variant="ghost" onClick={() => toggleVerified(v)}>{v.verified ? "Unverify" : "Verify"}</Button></Td>
           </tr>
         ))}
+        {vehicles.length === 0 && <tr><Td colSpan={6}>No vehicles yet.</Td></tr>}
       </Table>
     </Panel>
   );
 }
 
 function Inspectors() {
+  const [inspectors, loading] = useLoad(async () => {
+    const { data } = await supabase.from("inspectors").select("*, inspections(count)");
+    return data || [];
+  });
+  if (loading) return <Spinner />;
   return (
-    <Panel title="Inspectors" action={<Button>Add Inspector</Button>}>
-      <Table columns={["Name", "Location", "Assigned", "Completed", "Rating", ""]}>
+    <Panel title="Inspectors">
+      <Table columns={["Name", "Location", "Rating", ""]}>
         {inspectors.map((i) => (
           <tr key={i.id}>
-            <Td bold>{i.name}</Td>
+            <Td bold>{i.full_name}</Td>
             <Td>{i.location}</Td>
-            <Td>{i.assigned}</Td>
-            <Td>{i.completed}</Td>
             <Td>{i.rating} / 5</Td>
             <Td><Button variant="ghost">View Profile</Button></Td>
           </tr>
         ))}
+        {inspectors.length === 0 && <tr><Td colSpan={4}>No inspectors yet.</Td></tr>}
       </Table>
     </Panel>
   );
 }
 
 function Content() {
+  const [articles, loading, reload] = useLoad(async () => {
+    const { data } = await supabase.from("articles").select("*").order("created_at", { ascending: false });
+    return data || [];
+  });
+
+  async function togglePublish(a) {
+    const next = a.status === "published" ? "draft" : "published";
+    await supabase.from("articles").update({ status: next }).eq("id", a.id);
+    reload();
+  }
+
+  if (loading) return <Spinner />;
   return (
-    <Panel title="Content Hub" action={<Button>New Article</Button>}>
+    <Panel title="Content Hub">
       <Table columns={["Title", "Status", "Reads", ""]}>
         {articles.map((a) => (
           <tr key={a.id}>
             <Td bold>{a.title}</Td>
-            <Td><Badge tone={a.status === "Published" ? "success" : "neutral"}>{a.status}</Badge></Td>
-            <Td>{a.reads}</Td>
-            <Td><Button variant="ghost">Edit</Button></Td>
+            <Td><Badge tone={a.status === "published" ? "success" : "neutral"}>{a.status}</Badge></Td>
+            <Td>{a.reads.toLocaleString()}</Td>
+            <Td><Button variant="ghost" onClick={() => togglePublish(a)}>{a.status === "published" ? "Unpublish" : "Publish"}</Button></Td>
           </tr>
         ))}
+        {articles.length === 0 && <tr><Td colSpan={4}>No articles yet.</Td></tr>}
       </Table>
     </Panel>
   );
 }
 
-function SearchBox({ placeholder }) {
+function SearchBox({ value, onChange, placeholder }) {
   return (
     <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
       <Search size={14} className="text-slate-400" />
-      <input placeholder={placeholder} className="bg-transparent outline-none text-[12.5px] placeholder:text-slate-400" />
+      <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="bg-transparent outline-none text-[12.5px] placeholder:text-slate-400" />
     </div>
   );
 }

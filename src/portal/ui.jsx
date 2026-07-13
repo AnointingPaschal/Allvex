@@ -64,9 +64,9 @@ export function Table({ columns, children }) {
   );
 }
 
-export function Td({ children, bold = false, className = "" }) {
+export function Td({ children, bold = false, className = "", ...rest }) {
   return (
-    <td className={`px-5 py-3.5 text-[13px] whitespace-nowrap ${bold ? "font-semibold text-midnight" : "text-slate-500"} ${className}`}>
+    <td {...rest} className={`px-5 py-3.5 text-[13px] whitespace-nowrap ${bold ? "font-semibold text-midnight" : "text-slate-500"} ${className}`}>
       {children}
     </td>
   );

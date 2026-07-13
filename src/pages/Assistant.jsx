@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Bot, Send, Sparkles, Car, ChevronDown, X, Wrench, MessageCircle, AlertTriangle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { garageVehicles } from "../data/mock.js";
+import { supabase } from "../lib/supabase.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const mdComponents = {
   p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
@@ -49,6 +50,8 @@ Style rules:
 - Be direct and practical, not overly cautious or repetitive with disclaimers.`;
 
 export default function Assistant() {
+  const { profile } = useAuth();
+  const [garageVehicles, setGarageVehicles] = useState([]);
   const [messages, setMessages] = useState([
     { from: "ai", text: "Hi Alex. I'm your Allvex assistant. I can diagnose check-engine codes, answer maintenance questions, or help with imports. Pick a vehicle below to get started." },
   ]);
@@ -61,6 +64,19 @@ export default function Assistant() {
   const [code, setCode] = useState("");
   const [symptoms, setSymptoms] = useState("");
   const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (!profile) return;
+    setMessages((m) => {
+      const first = m[0];
+      if (first?.from === "ai" && first.text.startsWith("Hi Alex")) {
+        return [{ ...first, text: first.text.replace("Hi Alex", `Hi ${profile.full_name?.split(" ")[0] || "there"}`) }, ...m.slice(1)];
+      }
+      return m;
+    });
+    supabase.from("garage_vehicles").select("id, nickname, brand, model, year, mileage").eq("owner_id", profile.id)
+      .then(({ data }) => setGarageVehicles(data || []));
+  }, [profile]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
