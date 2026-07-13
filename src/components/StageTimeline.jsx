@@ -27,10 +27,10 @@ export default function StageTimeline({ stages }) {
               {s.current && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
             </div>
             <div className="pt-0.5">
-              <p className={`text-[13.5px] leading-tight ${s.done ? "text-midnight font-semibold" : "text-slate-400 font-medium"}`}>
+              <p className={`text-[12px] leading-tight ${s.done ? "text-midnight font-semibold" : "text-slate-400 font-medium"}`}>
                 {s.label}
               </p>
-              <p className="text-[11.5px] text-slate-400 mt-0.5">{s.date}</p>
+              <p className="text-[10.5px] text-slate-400 mt-0.5">{s.date}</p>
             </div>
           </div>
         );

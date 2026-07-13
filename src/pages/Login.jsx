@@ -4,13 +4,13 @@ import { Fingerprint, Mail, Lock } from "lucide-react";
 export default function Login() {
   const navigate = useNavigate();
   return (
-    <div className="flex flex-col min-h-screen bg-white px-6 pt-16 pb-8">
+    <div className="flex flex-col min-h-screen sm:min-h-0 bg-white sm:my-10 sm:rounded-2xl sm:shadow-card px-5 pt-10 sm:pt-8 pb-6 max-w-sm mx-auto w-full">
       <div className="mb-10">
-        <div className="w-12 h-12 rounded-2xl bg-midnight flex items-center justify-center mb-6">
-          <span className="text-white font-extrabold text-lg">A</span>
+        <div className="w-10 h-10 rounded-2xl bg-midnight flex items-center justify-center mb-6">
+          <span className="text-white font-extrabold text-[15px]">A</span>
         </div>
-        <h1 className="text-2xl font-bold text-midnight mb-1">Welcome back</h1>
-        <p className="text-slate-400 text-[14.5px]">Log in to continue to your Allvex account.</p>
+        <h1 className="text-[19px] font-bold text-midnight mb-1">Welcome back</h1>
+        <p className="text-slate-400 text-[12.5px]">Log in to continue to your Allvex account.</p>
       </div>
 
       <div className="flex flex-col gap-3.5">
@@ -60,7 +60,7 @@ function Field({ icon: Icon, ...props }) {
   return (
     <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-allvex px-4 py-3.5">
       <Icon size={18} className="text-slate-400 shrink-0" />
-      <input {...props} className="bg-transparent outline-none text-[14.5px] w-full placeholder:text-slate-400" />
+      <input {...props} className="bg-transparent outline-none text-[12.5px] w-full placeholder:text-slate-400" />
     </div>
   );
 }

@@ -51,26 +51,26 @@ export default function GarageVehicle() {
     <div className="pb-10">
       <TopBar title={v.nickname} right={<MoreHorizontal size={19} className="text-midnight" />} />
 
-      <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} className="h-40 w-full" iconSize={40} />
+      <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} className="h-32 sm:h-40 w-full" iconSize={32} />
 
-      <div className="px-5">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-start justify-between mt-4">
           <div>
-            <p className="text-[17px] font-bold text-midnight">{v.brand} {v.model}</p>
-            <p className="text-[12.5px] text-slate-400 mt-0.5">{v.year} · {v.color} · {v.plate}</p>
+            <p className="text-[15px] font-bold text-midnight">{v.brand} {v.model}</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">{v.year} · {v.color} · {v.plate}</p>
           </div>
           <div className="text-right">
-            <p className="text-[17px] font-bold text-success">{v.health}%</p>
+            <p className="text-[15px] font-bold text-success">{v.health}%</p>
             <p className="text-[10.5px] text-slate-400">Health Score</p>
           </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mt-4 -mx-5 px-5">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mt-4 -mx-5 px-4 sm:px-6 lg:px-8">
           {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`tap shrink-0 px-4 py-2 rounded-pill text-[12.5px] font-semibold ${
+              className={`tap shrink-0 px-4 py-2 rounded-pill text-[11px] font-semibold ${
                 tab === t ? "bg-midnight text-white" : "bg-slate-100 text-slate-500"
               }`}
             >
@@ -79,16 +79,16 @@ export default function GarageVehicle() {
           ))}
         </div>
 
-        <div className="mt-5">
+        <div className="mt-4">
           {tab === "Overview" && (
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-2.5">
                 <Stat icon={Gauge} label="Mileage" value={`${v.mileage.toLocaleString()} km`} />
                 <Stat icon={ShieldCheck} label="Insurance" value={v.insurance} />
               </div>
-              <div className="bg-white rounded-allvex shadow-card p-4">
-                <p className="text-[13px] font-semibold text-midnight mb-1">Next up</p>
-                <p className="text-[12.5px] text-slate-400">{v.nextService}</p>
+              <div className="bg-white rounded-allvex shadow-card p-3.5">
+                <p className="text-[12px] font-semibold text-midnight mb-1">Next up</p>
+                <p className="text-[11px] text-slate-400">{v.nextService}</p>
               </div>
               <button onClick={() => setTab("Maintenance")} className="tap w-full bg-electric/10 rounded-allvex p-4 text-left">
                 <p className="text-[13px] font-semibold text-electric">Set a routine reminder</p>
@@ -140,7 +140,7 @@ export default function GarageVehicle() {
           )}
 
           {tab === "Expenses" && (
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-3">
               <div className="bg-midnight rounded-allvex p-4 flex items-center justify-between">
                 <div>
                   <p className="text-[11px] text-slate-400">Total ownership cost</p>
@@ -156,7 +156,7 @@ export default function GarageVehicle() {
           )}
 
           {tab === "Timeline" && (
-            <div className="bg-white rounded-allvex shadow-card p-5">
+            <div className="bg-white rounded-allvex shadow-card p-4">
               <StageTimeline stages={timelineEvents} />
             </div>
           )}
@@ -165,7 +165,7 @@ export default function GarageVehicle() {
 
       {showAdd && (
         <div className="fixed inset-0 bg-black/40 flex items-end z-50 max-w-[430px] mx-auto" onClick={() => setShowAdd(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="bg-white w-full rounded-t-[28px] p-6 pb-8">
+          <div onClick={(e) => e.stopPropagation()} className="bg-white w-full rounded-t-[28px] p-5 pb-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-[16px] font-bold text-midnight">Add Routine Task</h3>
               <button onClick={() => setShowAdd(false)}><X size={20} className="text-slate-400" /></button>

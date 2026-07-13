@@ -17,10 +17,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Mobile app frame for desktop viewports */
+/* Full-width responsive shell (no phone frame) */
 .app-shell {
-  max-width: 430px;
-  margin: 0 auto;
+  width: 100%;
   min-height: 100vh;
   background: #F6F8FB;
   position: relative;
@@ -29,11 +28,16 @@ body {
   overflow-x: hidden;
 }
 
-@media (min-width: 431px) {
-  .app-shell {
-    box-shadow: 0 0 60px rgba(15,23,42,0.15);
-    min-height: 100vh;
-  }
+/* Centers page content with generous width on desktop, edge-to-edge on mobile */
+.page {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* Space for the fixed bottom nav so content never sits underneath it */
+.nav-offset {
+  padding-bottom: 76px;
 }
 
 ::-webkit-scrollbar { width: 0px; height: 0px; }

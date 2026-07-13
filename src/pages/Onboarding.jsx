@@ -28,13 +28,14 @@ export default function Onboarding() {
   const isLast = step === slides.length - 1;
 
   return (
-    <div className="flex flex-col h-full min-h-screen bg-midnight text-white px-6 pt-16 pb-10">
+    <div className="min-h-screen bg-midnight flex items-center justify-center">
+      <div className="flex flex-col w-full max-w-md min-h-screen sm:min-h-[640px] text-white px-5 pt-10 pb-8">
       <div className="flex-1 flex flex-col items-center justify-center text-center">
-        <div className="w-24 h-24 rounded-allvex bg-white/10 flex items-center justify-center mb-10">
-          <Icon size={44} strokeWidth={1.5} className="text-electric" />
+        <div className="w-20 h-20 rounded-allvex bg-white/10 flex items-center justify-center mb-10">
+          <Icon size={36} strokeWidth={1.5} className="text-electric" />
         </div>
-        <h1 className="text-2xl font-bold leading-snug mb-3">{slide.title}</h1>
-        <p className="text-slate-300 text-[15px] leading-relaxed max-w-xs">{slide.text}</p>
+        <h1 className="text-[19px] font-bold leading-snug mb-3">{slide.title}</h1>
+        <p className="text-slate-300 text-[13px] leading-relaxed max-w-xs">{slide.text}</p>
       </div>
 
       <div className="flex justify-center gap-2 mb-8">
@@ -54,11 +55,12 @@ export default function Onboarding() {
         )}
         <button
           onClick={() => (isLast ? navigate("/login") : setStep(step + 1))}
-          className="tap flex-[2] py-3.5 rounded-allvex bg-electric text-white font-semibold text-[15px] flex items-center justify-center gap-2"
+          className="tap flex-[2] py-3.5 rounded-allvex bg-electric text-white font-semibold text-[13px] flex items-center justify-center gap-2"
         >
           {isLast ? "Get Started" : "Next"}
           <ChevronRight size={18} />
         </button>
+      </div>
       </div>
     </div>
   );

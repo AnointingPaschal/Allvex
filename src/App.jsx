@@ -38,7 +38,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <div className="flex-1 flex flex-col">
+      <div className={`page flex-1 flex flex-col w-full ${!noNav ? "nav-offset" : ""}`}>
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/login" element={<Login />} />

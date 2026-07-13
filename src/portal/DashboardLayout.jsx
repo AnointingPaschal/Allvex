@@ -6,7 +6,7 @@ export default function DashboardLayout({ roleLabel, roleColor = "bg-electric", 
   return (
     <div className="min-h-screen flex bg-[#EDF0F4]">
       {/* Sidebar */}
-      <aside className="w-64 shrink-0 bg-midnight text-white flex flex-col min-h-screen">
+      <aside className="w-56 shrink-0 bg-midnight text-white flex flex-col min-h-screen">
         <div className="px-6 py-6 flex items-center gap-2.5 border-b border-white/10">
           <div className="w-8 h-8 rounded-lg bg-electric flex items-center justify-center font-extrabold text-[13px]">A</div>
           <div>
@@ -42,10 +42,10 @@ export default function DashboardLayout({ roleLabel, roleColor = "bg-electric", 
 
       {/* Content */}
       <main className="flex-1 min-h-screen">
-        <div className="px-8 py-7 max-w-6xl">
+        <div className="px-6 lg:px-8 py-6 max-w-6xl">
           <div className="mb-6">
-            <h1 className="text-[21px] font-bold text-midnight">{title}</h1>
-            {subtitle && <p className="text-[13px] text-slate-400 mt-1">{subtitle}</p>}
+            <h1 className="text-[18px] font-bold text-midnight">{title}</h1>
+            {subtitle && <p className="text-[12px] text-slate-400 mt-1">{subtitle}</p>}
           </div>
           {children}
         </div>
