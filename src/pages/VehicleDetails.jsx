@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Heart, Share2, BadgeCheck, Gauge, Zap, Users, Compass, ShieldCheck, MessageCircle, ChevronLeft } from "lucide-react";
-import VehicleArt from "../components/VehicleArt.jsx";
+import { Gauge, Zap, Users, Compass, ShieldCheck, MessageCircle } from "lucide-react";
+import VehicleGallery from "../components/VehicleGallery.jsx";
 import { vehicles } from "../data/mock.js";
 
 export default function VehicleDetails() {
@@ -14,28 +14,10 @@ export default function VehicleDetails() {
     <div className="pb-24 relative">
       <div className="lg:grid lg:grid-cols-5 lg:gap-6 lg:px-8 lg:pt-6">
         <div className="lg:col-span-2 relative">
-          <VehicleArt category={v.category} src={v.image} className="h-52 lg:h-full lg:rounded-xl w-full" iconSize={48} />
-          <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-            <button onClick={() => navigate(-1)} className="tap w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
-              <ChevronLeft size={16} className="text-midnight" />
-            </button>
-            <div className="flex gap-2">
-              <button className="tap w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
-                <Share2 size={13} className="text-midnight" />
-              </button>
-              <button className="tap w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
-                <Heart size={13} className="text-midnight" />
-              </button>
-            </div>
-          </div>
-          {v.verified && (
-            <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-white rounded-pill px-2.5 py-1 text-[10px] font-semibold text-electric shadow-card">
-              <BadgeCheck size={11} /> Verified by Allvex
-            </span>
-          )}
+          <VehicleGallery photos={v.gallery} verified={v.verified} />
         </div>
 
-        <div className="lg:col-span-3 px-4 sm:px-6 lg:px-0 -mt-4 lg:mt-0 relative">
+        <div className="lg:col-span-3 px-4 sm:px-6 lg:px-0 -mt-2 lg:mt-0 relative">
           <div className="bg-white rounded-xl shadow-card p-4">
             <div className="flex items-start justify-between">
               <div>

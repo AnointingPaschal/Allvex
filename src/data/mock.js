@@ -1,3 +1,20 @@
+// Shared detail-shot bank (interior/engine are representative, not brand-specific —
+// Allvex doesn't have real supplier photography yet).
+const REAR_VIEW = "https://images.pexels.com/photos/36718056/pexels-photo-36718056.jpeg?auto=compress&cs=tinysrgb&w=800";
+const INTERIOR_DASH = "https://images.pexels.com/photos/36718053/pexels-photo-36718053.jpeg?auto=compress&cs=tinysrgb&w=800";
+const INTERIOR_SEATS = "https://images.pexels.com/photos/36646941/pexels-photo-36646941.jpeg?auto=compress&cs=tinysrgb&w=800";
+const ENGINE_BAY = "https://images.pexels.com/photos/16545849/pexels-photo-16545849.jpeg?auto=compress&cs=tinysrgb&w=800";
+
+function buildGallery(frontImage) {
+  return [
+    { url: frontImage, category: "Exterior", label: "Front" },
+    { url: REAR_VIEW, category: "Exterior", label: "Rear" },
+    { url: INTERIOR_DASH, category: "Interior", label: "Dashboard" },
+    { url: INTERIOR_SEATS, category: "Interior", label: "Seats" },
+    { url: ENGINE_BAY, category: "Engine", label: "Engine Bay" },
+  ];
+}
+
 export const vehicles = [
   {
     id: "byd-seal-premium",
@@ -14,6 +31,7 @@ export const vehicles = [
     category: "Electric",
     score: 91,
     image: "https://images.pexels.com/photos/32232616/pexels-photo-32232616.jpeg?auto=compress&cs=tinysrgb&w=800",
+    gallery: buildGallery("https://images.pexels.com/photos/32232616/pexels-photo-32232616.jpeg?auto=compress&cs=tinysrgb&w=800"),
     specs: { engine: "Dual Motor AWD", battery: "82.5 kWh", hp: "530 hp", range: "570 km", seats: 5, drive: "AWD" },
     performance: { accel: "3.8s 0–100km/h", topSpeed: "180 km/h", charge: "26 min (10-80%)" },
     ownership: { insurance: 850000, maintenance: 300000, running: 180000 },
@@ -34,6 +52,7 @@ export const vehicles = [
     category: "SUV",
     score: 86,
     image: "https://images.pexels.com/photos/30795598/pexels-photo-30795598.jpeg?auto=compress&cs=tinysrgb&w=800",
+    gallery: buildGallery("https://images.pexels.com/photos/30795598/pexels-photo-30795598.jpeg?auto=compress&cs=tinysrgb&w=800"),
     specs: { engine: "2.0T Turbo", battery: "—", hp: "248 hp", range: "—", seats: 7, drive: "AWD" },
     performance: { accel: "8.5s 0–100km/h", topSpeed: "195 km/h", charge: "—" },
     ownership: { insurance: 620000, maintenance: 240000, running: 210000 },
@@ -54,6 +73,7 @@ export const vehicles = [
     category: "SUV",
     score: 82,
     image: "https://images.pexels.com/photos/14776590/pexels-photo-14776590.jpeg?auto=compress&cs=tinysrgb&w=800",
+    gallery: buildGallery("https://images.pexels.com/photos/14776590/pexels-photo-14776590.jpeg?auto=compress&cs=tinysrgb&w=800"),
     specs: { engine: "1.6T", battery: "—", hp: "197 hp", range: "—", seats: 7, drive: "FWD" },
     performance: { accel: "9.7s 0–100km/h", topSpeed: "185 km/h", charge: "—" },
     ownership: { insurance: 480000, maintenance: 190000, running: 160000 },
@@ -74,6 +94,7 @@ export const vehicles = [
     category: "Electric",
     score: 88,
     image: "https://images.pexels.com/photos/16490609/pexels-photo-16490609.jpeg?auto=compress&cs=tinysrgb&w=800",
+    gallery: buildGallery("https://images.pexels.com/photos/16490609/pexels-photo-16490609.jpeg?auto=compress&cs=tinysrgb&w=800"),
     specs: { engine: "Rear Motor", battery: "80.9 kWh", hp: "469 hp", range: "610 km", seats: 5, drive: "RWD" },
     performance: { accel: "4.3s 0–100km/h", topSpeed: "170 km/h", charge: "29 min (10-80%)" },
     ownership: { insurance: 900000, maintenance: 280000, running: 170000 },
