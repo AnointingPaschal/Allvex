@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Eye, Trash2, BadgeCheck, Image } from "lucide-react";
 import { SectionPanel, SearchBar, DataTable, TR, TD, Chip, Btn, Spinner, EmptyState, Modal, Field, Input, Select, Textarea, SaveBtn, Confirm, StatCard } from "../components/ui.jsx";
+import FileUpload from "../../../components/FileUpload.jsx";
 import { supabase } from "../../../lib/supabase.js";
 import { Car } from "lucide-react";
 
@@ -315,8 +316,8 @@ export default function Vehicles({ toast }) {
 
             <div className="border-t border-slate-100 pt-3 space-y-2.5">
               <p className="text-[12px] font-semibold text-midnight">Add Image</p>
-              <Field label="Image URL">
-                <Input value={newImage.url} onChange={(e) => setNewImage((n) => ({ ...n, url: e.target.value }))} placeholder="https://..." />
+              <Field label="Image">
+                <FileUpload value={newImage.url} onChange={(url) => setNewImage((n) => ({ ...n, url }))} folder="vehicles" compact />
               </Field>
               <div className="grid grid-cols-2 gap-2.5">
                 <Field label="Category">

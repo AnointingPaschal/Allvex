@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Eye, Trash2, Globe, FileText } from "lucide-react";
 import { SectionPanel, SearchBar, DataTable, TR, TD, Chip, Btn, Spinner, EmptyState, Modal, Field, Input, Textarea, SaveBtn, Confirm, StatCard } from "../components/ui.jsx";
+import FileUpload from "../../../components/FileUpload.jsx";
 import { supabase } from "../../../lib/supabase.js";
 
 const blank = { title: "", body: "", image_url: "", read_time: "5 min read", status: "draft" };
@@ -102,7 +103,9 @@ export default function Content({ toast }) {
         <Modal title={isNew ? "New Article" : `Edit — ${editing.title.slice(0, 40)}...`} onClose={() => setEditing(null)} width="max-w-2xl">
           <div className="space-y-4">
             <Field label="Title"><Input value={editing.title} onChange={(e) => setEditing((x) => ({ ...x, title: e.target.value }))} placeholder="Article title" /></Field>
-            <Field label="Image URL"><Input value={editing.image_url} onChange={(e) => setEditing((x) => ({ ...x, image_url: e.target.value }))} placeholder="https://..." /></Field>
+            <Field label="Article Image">
+              <FileUpload value={editing.image_url || ""} onChange={(url) => setEditing((x) => ({ ...x, image_url: url }))} folder="articles" />
+            </Field>
             {editing.image_url && (
               <img src={editing.image_url} alt="preview" className="w-full h-36 object-cover rounded-xl" onError={(e) => { e.target.style.display = "none"; }} />
             )}
