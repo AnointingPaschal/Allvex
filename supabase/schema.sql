@@ -475,3 +475,6 @@ create policy "articles_admin_write" on articles for all
 -- ---- notifications: owner only ----
 create policy "notifications_owner" on notifications for all
   using (user_id = auth.uid());
+
+-- Add gallery support to garage vehicles (run this in SQL Editor if schema already applied)
+alter table garage_vehicles add column if not exists gallery_urls jsonb not null default '[]';

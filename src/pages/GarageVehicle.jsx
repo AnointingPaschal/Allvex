@@ -111,6 +111,8 @@ export default function GarageVehicle() {
     );
   }
 
+  const gallery = v.gallery_urls || [];
+
   const totalExpense = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const avgMonthly = expenses.length ? totalExpense / Math.max(1, new Set(expenses.map((e) => e.expense_date.slice(0, 7))).size) : 0;
 
@@ -124,7 +126,11 @@ export default function GarageVehicle() {
   return (
     <div className="pb-10">
       <TopBar title={v.nickname} right={<MoreHorizontal size={19} className="text-midnight" />} />
-      <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} src={v.image_url} className="h-32 sm:h-40 w-full" iconSize={32} />
+      {v.image_url ? (
+        <img src={v.image_url} alt={v.nickname} className="h-32 sm:h-44 w-full object-cover" />
+      ) : (
+        <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} src={null} className="h-32 sm:h-40 w-full" iconSize={32} />
+      )}
 
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-start justify-between mt-4">
@@ -159,6 +165,32 @@ export default function GarageVehicle() {
                 <Stat icon={Gauge} label="Mileage" value={`${v.mileage.toLocaleString()} km`} />
                 <Stat icon={ShieldCheck} label="Insurance" value={v.insurance_status} />
               </div>
+
+              {/* Gallery */}
+              {gallery.length > 0 && (
+                <div>
+                  <p className="text-[11.5px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Photos</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {v.image_url && (
+                      <div className="col-span-2 row-span-2 relative rounded-xl overflow-hidden" style={{ aspectRatio: "16/9" }}>
+                        <img src={v.image_url} alt="Main" className="w-full h-full object-cover" />
+                        <span className="absolute bottom-1.5 left-1.5 text-[9px] font-semibold bg-black/50 text-white px-1.5 py-0.5 rounded-pill">Main</span>
+                      </div>
+                    )}
+                    {gallery.slice(0, v.image_url ? 4 : 6).map((url, i) => (
+                      <div key={i} className="relative rounded-xl overflow-hidden aspect-square">
+                        <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                        {i === (v.image_url ? 3 : 5) && gallery.length > (v.image_url ? 4 : 6) && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <span className="text-white font-bold text-[13px]">+{gallery.length - (v.image_url ? 4 : 6)}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <button onClick={() => setTab("Maintenance")} className="tap w-full bg-electric/10 rounded-xl p-4 text-left">
                 <p className="text-[13px] font-semibold text-electric">Set a routine reminder</p>
                 <p className="text-[11.5px] text-slate-500 mt-0.5">Oil change, servicing, wash & more — never miss a task.</p>
