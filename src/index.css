@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Roboto', -apple-system, sans-serif;
+  background: #EDF0F4;
+  color: #0F172A;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Mobile app frame for desktop viewports */
+.app-shell {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #F6F8FB;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+@media (min-width: 431px) {
+  .app-shell {
+    box-shadow: 0 0 60px rgba(15,23,42,0.15);
+    min-height: 100vh;
+  }
+}
+
+::-webkit-scrollbar { width: 0px; height: 0px; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.tap { transition: transform .15s ease, opacity .15s ease; }
+.tap:active { transform: scale(0.96); opacity: 0.85; }
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #E7EBF1 25%, #F1F4F8 37%, #E7EBF1 63%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease infinite;
+}
