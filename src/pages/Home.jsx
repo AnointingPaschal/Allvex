@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Bell, Search, Car, Wrench, Bot, ClipboardCheck, ShoppingBag, Truck, ChevronRight, ArrowRight } from "lucide-react";
 import VehicleArt from "../components/VehicleArt.jsx";
+import HeroCarousel from "../components/HeroCarousel.jsx";
 import { vehicles, reminders, activeImport, garageVehicles, articles, accessories } from "../data/mock.js";
 
 const levelStyles = {
@@ -47,7 +48,12 @@ export default function Home() {
       </div>
 
       <div className="px-4 sm:px-6 lg:px-8">
-        {/* Quick actions */}
+        {/* Hero carousel — featured vehicle photos */}
+        <div className="mt-4">
+          <HeroCarousel vehicles={vehicles} />
+        </div>
+
+        {/* Quick actions — moved into a slim strip below the carousel */}
         <div className="mt-4">
           <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5">
             {quickActions.map((q) => (
