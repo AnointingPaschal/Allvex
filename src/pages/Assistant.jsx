@@ -127,7 +127,7 @@ export default function Assistant() {
   }
 
   return (
-    <div className="flex flex-col" style={{ minHeight: "calc(100vh - 76px)" }}>
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
       <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-3.5 bg-midnight text-white rounded-b-[24px]">
         <div className="flex items-center gap-2.5 mb-3">
@@ -176,7 +176,7 @@ export default function Assistant() {
       </div>
 
       {/* Chat */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-2.5 max-w-2xl w-full mx-auto">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-2.5 max-w-2xl w-full mx-auto">
         {messages.map((m, i) => (
           <div
             key={i}
