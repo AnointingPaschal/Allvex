@@ -11,7 +11,7 @@ export default function ImportTracking() {
       <div className="px-4 sm:px-6 lg:px-8 pt-2 lg:grid lg:grid-cols-2 lg:gap-6">
         <div>
           <div className="bg-midnight rounded-xl p-3.5 flex gap-3 items-center">
-            <VehicleArt category="Electric" className="w-14 h-14 rounded-lg shrink-0" iconSize={22} />
+            <VehicleArt category="Electric" src={activeImport.image} className="w-14 h-14 rounded-lg shrink-0" iconSize={22} />
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-[12.5px] truncate">{activeImport.vehicle}</p>
               <p className="text-slate-400 text-[10.5px] mt-0.5">Order #ALX-20394</p>

@@ -61,7 +61,7 @@ export default function Marketplace() {
             className="tap bg-white rounded-xl shadow-card overflow-hidden text-left flex flex-col"
           >
             <div className="relative">
-              <VehicleArt category={v.category} className="h-24 w-full" iconSize={24} />
+              <VehicleArt category={v.category} src={v.image} className="h-24 w-full" iconSize={24} />
               <button className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 flex items-center justify-center">
                 <Heart size={11} className="text-midnight" />
               </button>

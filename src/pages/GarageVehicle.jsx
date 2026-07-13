@@ -51,7 +51,7 @@ export default function GarageVehicle() {
     <div className="pb-10">
       <TopBar title={v.nickname} right={<MoreHorizontal size={19} className="text-midnight" />} />
 
-      <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} className="h-32 sm:h-40 w-full" iconSize={32} />
+      <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} src={v.image} className="h-32 sm:h-40 w-full" iconSize={32} />
 
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-start justify-between mt-4">

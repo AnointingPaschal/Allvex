@@ -14,7 +14,7 @@ export default function VehicleDetails() {
     <div className="pb-24 relative">
       <div className="lg:grid lg:grid-cols-5 lg:gap-6 lg:px-8 lg:pt-6">
         <div className="lg:col-span-2 relative">
-          <VehicleArt category={v.category} className="h-52 lg:h-full lg:rounded-xl w-full" iconSize={48} />
+          <VehicleArt category={v.category} src={v.image} className="h-52 lg:h-full lg:rounded-xl w-full" iconSize={48} />
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
             <button onClick={() => navigate(-1)} className="tap w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
               <ChevronLeft size={16} className="text-midnight" />

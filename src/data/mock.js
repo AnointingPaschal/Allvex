@@ -13,7 +13,7 @@ export const vehicles = [
     verified: true,
     category: "Electric",
     score: 91,
-    image: "byd seal blue sedan studio",
+    image: "https://images.pexels.com/photos/32232616/pexels-photo-32232616.jpeg?auto=compress&cs=tinysrgb&w=800",
     specs: { engine: "Dual Motor AWD", battery: "82.5 kWh", hp: "530 hp", range: "570 km", seats: 5, drive: "AWD" },
     performance: { accel: "3.8s 0–100km/h", topSpeed: "180 km/h", charge: "26 min (10-80%)" },
     ownership: { insurance: 850000, maintenance: 300000, running: 180000 },
@@ -33,7 +33,7 @@ export const vehicles = [
     verified: true,
     category: "SUV",
     score: 86,
-    image: "gac gs8 suv black studio",
+    image: "https://images.pexels.com/photos/30795598/pexels-photo-30795598.jpeg?auto=compress&cs=tinysrgb&w=800",
     specs: { engine: "2.0T Turbo", battery: "—", hp: "248 hp", range: "—", seats: 7, drive: "AWD" },
     performance: { accel: "8.5s 0–100km/h", topSpeed: "195 km/h", charge: "—" },
     ownership: { insurance: 620000, maintenance: 240000, running: 210000 },
@@ -53,7 +53,7 @@ export const vehicles = [
     verified: true,
     category: "SUV",
     score: 82,
-    image: "chery tiggo 8 pro white suv",
+    image: "https://images.pexels.com/photos/14776590/pexels-photo-14776590.jpeg?auto=compress&cs=tinysrgb&w=800",
     specs: { engine: "1.6T", battery: "—", hp: "197 hp", range: "—", seats: 7, drive: "FWD" },
     performance: { accel: "9.7s 0–100km/h", topSpeed: "185 km/h", charge: "—" },
     ownership: { insurance: 480000, maintenance: 190000, running: 160000 },
@@ -73,7 +73,7 @@ export const vehicles = [
     verified: false,
     category: "Electric",
     score: 88,
-    image: "xpeng p7 white sedan",
+    image: "https://images.pexels.com/photos/16490609/pexels-photo-16490609.jpeg?auto=compress&cs=tinysrgb&w=800",
     specs: { engine: "Rear Motor", battery: "80.9 kWh", hp: "469 hp", range: "610 km", seats: 5, drive: "RWD" },
     performance: { accel: "4.3s 0–100km/h", topSpeed: "170 km/h", charge: "29 min (10-80%)" },
     ownership: { insurance: 900000, maintenance: 280000, running: 170000 },
@@ -94,7 +94,7 @@ export const garageVehicles = [
     health: 94,
     nextService: "Oil Change · 9 days",
     insurance: "Expires in 18 days",
-    image: "byd seal blue sedan studio",
+    image: "https://images.pexels.com/photos/32232616/pexels-photo-32232616.jpeg?auto=compress&cs=tinysrgb&w=800",
   },
   {
     id: "my-prado",
@@ -108,7 +108,7 @@ export const garageVehicles = [
     health: 78,
     nextService: "Brake Inspection · Overdue",
     insurance: "Valid",
-    image: "toyota land cruiser prado white",
+    image: "https://images.pexels.com/photos/5288744/pexels-photo-5288744.jpeg?auto=compress&cs=tinysrgb&w=800",
   },
 ];
 
@@ -124,7 +124,7 @@ export const activeImport = {
   stage: "Shipping to Lagos",
   eta: "18 Days",
   progress: 65,
-  image: "byd seal blue sedan studio",
+  image: "https://images.pexels.com/photos/32232616/pexels-photo-32232616.jpeg?auto=compress&cs=tinysrgb&w=800",
 };
 
 export const importTimeline = [
@@ -140,13 +140,13 @@ export const importTimeline = [
 ];
 
 export const articles = [
-  { id: 1, title: "Best SUVs Under ₦25m in 2026", time: "6 min read", image: "suv lineup dealership" },
-  { id: 2, title: "Should You Buy an Electric Vehicle in Nigeria?", time: "8 min read", image: "ev charging station africa" },
-  { id: 3, title: "BYD vs Toyota: Ownership Cost Compared", time: "5 min read", image: "byd toyota comparison cars" },
+  { id: 1, title: "Best SUVs Under ₦25m in 2026", time: "6 min read", image: "https://images.pexels.com/photos/14776592/pexels-photo-14776592.jpeg?auto=compress&cs=tinysrgb&w=600" },
+  { id: 2, title: "Should You Buy an Electric Vehicle in Nigeria?", time: "8 min read", image: "https://images.pexels.com/photos/11589801/pexels-photo-11589801.jpeg?auto=compress&cs=tinysrgb&w=600" },
+  { id: 3, title: "BYD vs Toyota: Ownership Cost Compared", time: "5 min read", image: "https://images.pexels.com/photos/27502215/pexels-photo-27502215.jpeg?auto=compress&cs=tinysrgb&w=600" },
 ];
 
 export const accessories = [
-  { id: 1, name: "4K Dashcam", price: 85000, rating: 4.8, image: "car dashcam product" },
-  { id: 2, name: "OBD-II Scanner", price: 42000, rating: 4.6, image: "obd scanner product" },
-  { id: 3, name: "Jump Starter Pro", price: 55000, rating: 4.7, image: "car jump starter product" },
+  { id: 1, name: "4K Dashcam", price: 85000, rating: 4.8, image: "https://images.pexels.com/photos/14776593/pexels-photo-14776593.jpeg?auto=compress&cs=tinysrgb&w=400" },
+  { id: 2, name: "OBD-II Scanner", price: 42000, rating: 4.6, image: "https://images.pexels.com/photos/12271951/pexels-photo-12271951.jpeg?auto=compress&cs=tinysrgb&w=400" },
+  { id: 3, name: "Jump Starter Pro", price: 55000, rating: 4.7, image: "https://images.pexels.com/photos/12920605/pexels-photo-12920605.jpeg?auto=compress&cs=tinysrgb&w=400" },
 ];

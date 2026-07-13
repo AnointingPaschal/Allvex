@@ -72,7 +72,7 @@ export default function Home() {
             <div>
               <SectionTitle title="Active Import" onView={() => navigate("/import")} />
               <button onClick={() => navigate("/import")} className="tap w-full bg-white rounded-xl shadow-card p-3.5 flex gap-3 text-left">
-                <VehicleArt category="Electric" className="w-14 h-14 rounded-lg shrink-0" iconSize={22} />
+                <VehicleArt category="Electric" src={activeImport.image} className="w-14 h-14 rounded-lg shrink-0" iconSize={22} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-midnight text-[12.5px] truncate">{activeImport.vehicle}</p>
                   <p className="text-[11px] text-slate-400 mt-0.5">{activeImport.stage}</p>
@@ -90,7 +90,7 @@ export default function Home() {
               <div className="grid sm:grid-cols-2 gap-3">
                 {garageVehicles.map((v) => (
                   <button key={v.id} onClick={() => navigate(`/garage/${v.id}`)} className="tap bg-white rounded-xl shadow-card overflow-hidden text-left flex">
-                    <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} className="w-20 shrink-0" iconSize={22} />
+                    <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} src={v.image} className="w-20 shrink-0" iconSize={22} />
                     <div className="p-3 min-w-0">
                       <p className="font-semibold text-midnight text-[12px] truncate">{v.nickname}</p>
                       <p className="text-[10.5px] text-slate-400 mt-0.5 truncate">{v.nextService}</p>
@@ -106,7 +106,7 @@ export default function Home() {
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
                 {vehicles.map((v) => (
                   <button key={v.id} onClick={() => navigate(`/marketplace/${v.id}`)} className="tap bg-white rounded-xl shadow-card overflow-hidden text-left">
-                    <VehicleArt category={v.category} className="h-20 w-full" iconSize={22} />
+                    <VehicleArt category={v.category} src={v.image} className="h-20 w-full" iconSize={22} />
                     <div className="p-2.5">
                       <p className="font-semibold text-midnight text-[11.5px] truncate">{v.brand} {v.model}</p>
                       <p className="text-[10px] text-slate-400 mt-0.5">{v.year} · {v.fuel}</p>
@@ -152,7 +152,7 @@ export default function Home() {
               <div className="flex flex-col gap-2">
                 {articles.map((a) => (
                   <div key={a.id} className="bg-white rounded-xl shadow-card p-2.5 flex items-center gap-2.5">
-                    <VehicleArt category="default" className="w-12 h-12 rounded-lg shrink-0" iconSize={16} />
+                    <VehicleArt category="default" src={a.image} className="w-12 h-12 rounded-lg shrink-0" iconSize={16} />
                     <div className="min-w-0">
                       <p className="text-[11.5px] font-semibold text-midnight leading-snug line-clamp-2">{a.title}</p>
                       <p className="text-[10px] text-slate-400 mt-1">{a.time}</p>
@@ -168,7 +168,7 @@ export default function Home() {
               <div className="grid grid-cols-3 sm:grid-cols-2 gap-2.5">
                 {accessories.map((a) => (
                   <div key={a.id} className="tap bg-white rounded-xl shadow-card overflow-hidden">
-                    <VehicleArt category="default" className="h-14 w-full" iconSize={16} />
+                    <VehicleArt category="default" src={a.image} className="h-14 w-full" iconSize={16} />
                     <div className="p-2">
                       <p className="text-[10.5px] font-semibold text-midnight leading-tight truncate">{a.name}</p>
                       <p className="text-[10.5px] font-bold text-electric mt-0.5">₦{a.price.toLocaleString()}</p>

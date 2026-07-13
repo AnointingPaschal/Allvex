@@ -30,7 +30,7 @@ export default function Garage() {
             onClick={() => navigate(`/garage/${v.id}`)}
             className="tap bg-white rounded-xl shadow-card overflow-hidden text-left"
           >
-            <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} className="h-24 w-full" iconSize={26} />
+            <VehicleArt category={v.brand === "BYD" ? "Electric" : "SUV"} src={v.image} className="h-24 w-full" iconSize={26} />
             <div className="p-3.5">
               <div className="flex items-start justify-between">
                 <div>
