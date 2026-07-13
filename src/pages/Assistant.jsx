@@ -16,6 +16,14 @@ const mdComponents = {
   h3: ({ node, ...props }) => <p className="font-semibold text-[12.5px] mb-1" {...props} />,
   code: ({ node, ...props }) => <code className="bg-black/5 px-1 py-0.5 rounded text-[11.5px] font-mono" {...props} />,
   a: ({ node, ...props }) => <a className="underline font-medium" target="_blank" rel="noreferrer" {...props} />,
+  table: ({ node, ...props }) => (
+    <div className="overflow-x-auto -mx-1 mb-2 last:mb-0">
+      <table className="text-[11px] border-collapse min-w-max" {...props} />
+    </div>
+  ),
+  thead: ({ node, ...props }) => <thead className="bg-black/5" {...props} />,
+  th: ({ node, ...props }) => <th className="px-2 py-1.5 text-left font-semibold border-b border-black/10 whitespace-nowrap" {...props} />,
+  td: ({ node, ...props }) => <td className="px-2 py-1.5 border-b border-black/5 align-top" {...props} />,
 };
 
 const suggestions = [
@@ -33,8 +41,9 @@ You help with:
 - Vehicle comparisons, import tracking questions, and general Allvex platform questions.
 
 Style rules:
-- Keep answers concise and scannable — this is a mobile chat UI. Use short paragraphs or a tight bullet list. Avoid long essays.
-- When diagnosing a code, structure the answer as: what it means, likely causes (ranked), urgency/safety, recommended action.
+- Keep answers concise and scannable — this is a narrow mobile chat bubble (roughly 300px wide). Use short paragraphs or a tight bullet list.
+- NEVER use markdown tables. Tables do not render usably in a narrow chat bubble — they break into unreadable stacked fragments. For maintenance checklists, comparisons, or any structured data, use a bullet list instead: a bold lead-in (e.g. "**Every 5,000 km or 6 months**") followed by 1-2 short lines of detail, not a multi-column grid.
+- When diagnosing a code, structure the answer as: what it means, likely causes (ranked), urgency/safety, recommended action — as short bullets, not a table.
 - Always recommend a certified inspection for anything safety-critical (brakes, steering, airbags, structural) rather than DIY instructions for those systems.
 - Don't invent vehicle-specific data (mileage, service history) beyond what's given in the conversation context.
 - Be direct and practical, not overly cautious or repetitive with disclaimers.`;
