@@ -1,6 +1,22 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, Sparkles, Car, ChevronDown, X, Wrench, MessageCircle, AlertTriangle } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { garageVehicles } from "../data/mock.js";
+
+const mdComponents = {
+  p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
+  strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
+  em: ({ node, ...props }) => <em className="italic" {...props} />,
+  ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 last:mb-0 space-y-1" {...props} />,
+  ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2 last:mb-0 space-y-1" {...props} />,
+  li: ({ node, ...props }) => <li className="leading-snug" {...props} />,
+  h1: ({ node, ...props }) => <p className="font-bold text-[13.5px] mb-1.5" {...props} />,
+  h2: ({ node, ...props }) => <p className="font-bold text-[13px] mb-1.5" {...props} />,
+  h3: ({ node, ...props }) => <p className="font-semibold text-[12.5px] mb-1" {...props} />,
+  code: ({ node, ...props }) => <code className="bg-black/5 px-1 py-0.5 rounded text-[11.5px] font-mono" {...props} />,
+  a: ({ node, ...props }) => <a className="underline font-medium" target="_blank" rel="noreferrer" {...props} />,
+};
 
 const suggestions = [
   "Where is my car?",
@@ -155,20 +171,26 @@ export default function Assistant() {
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`max-w-[85%] px-3.5 py-2.5 rounded-xl text-[12.5px] leading-relaxed whitespace-pre-wrap ${
+            className={`msg-in max-w-[85%] px-3.5 py-2.5 rounded-xl text-[12.5px] ${
               m.from === "ai"
                 ? m.isError
                   ? "bg-red-50 text-danger self-start"
                   : "bg-white shadow-card text-midnight self-start"
-                : "bg-electric text-white self-end"
+                : "bg-electric text-white self-end whitespace-pre-wrap leading-relaxed"
             }`}
           >
-            {m.text}
+            {m.from === "ai" ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                {m.text}
+              </ReactMarkdown>
+            ) : (
+              m.text
+            )}
           </div>
         ))}
 
         {loading && (
-          <div className="max-w-[85%] px-3.5 py-2.5 rounded-xl bg-white shadow-card self-start flex gap-1">
+          <div className="msg-in max-w-[85%] px-3.5 py-2.5 rounded-xl bg-white shadow-card self-start flex gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.3s]" />
             <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.15s]" />
             <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce" />

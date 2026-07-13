@@ -87,7 +87,7 @@ export default function SupportPortal() {
 
 function TicketDetail({ ticket, onBack }) {
   return (
-    <div className="grid grid-cols-3 gap-5">
+    <div className="grid lg:grid-cols-3 gap-4 lg:gap-5">
       <div className="col-span-2 bg-white rounded-allvex shadow-card flex flex-col h-[560px]">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>

@@ -47,7 +47,7 @@ export default function AdminPortal() {
 function Overview() {
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <KpiCard label="Total Customers" value="1,284" sub="+42 this week" icon={Users} />
         <KpiCard label="Active Imports" value="37" sub="+5 this week" icon={PackageCheck} />
         <KpiCard label="Revenue (MTD)" value="₦412.8m" sub="+18% vs last month" icon={Wallet} />

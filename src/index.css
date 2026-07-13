@@ -48,6 +48,17 @@ body {
 .tap { transition: transform .15s ease, opacity .15s ease; }
 .tap:active { transform: scale(0.96); opacity: 0.85; }
 
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.msg-in {
+  animation: msgIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .msg-in { animation: none; }
+}
+
 @keyframes shimmer {
   0% { background-position: -400px 0; }
   100% { background-position: 400px 0; }

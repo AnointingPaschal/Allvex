@@ -26,7 +26,7 @@ export default function SupplierPortal() {
       subtitle="Guangzhou Auto Trading Co."
     >
       {active === "overview" && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
           <KpiCard label="Vehicles Listed" value="24" icon={Car} />
           <KpiCard label="Pending Orders" value="2" icon={PackageCheck} />
           <KpiCard label="Revenue (MTD)" value="₦96.4m" sub="+12% vs last month" icon={Wallet} />
