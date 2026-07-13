@@ -11,10 +11,30 @@ import Garage from "./pages/Garage.jsx";
 import GarageVehicle from "./pages/GarageVehicle.jsx";
 import Assistant from "./pages/Assistant.jsx";
 import Profile from "./pages/Profile.jsx";
+import PortalHub from "./portal/PortalHub.jsx";
+import AdminPortal from "./portal/admin/AdminPortal.jsx";
+import SupplierPortal from "./portal/supplier/SupplierPortal.jsx";
+import InspectorPortal from "./portal/inspector/InspectorPortal.jsx";
+import SupportPortal from "./portal/support/SupportPortal.jsx";
+
+const PORTAL_PREFIXES = ["/portals", "/admin", "/supplier", "/inspector", "/support"];
 
 export default function App() {
   const location = useLocation();
+  const isPortal = PORTAL_PREFIXES.some((p) => location.pathname.startsWith(p));
   const noNav = ["/onboarding", "/login", "/signup"].includes(location.pathname);
+
+  if (isPortal) {
+    return (
+      <Routes>
+        <Route path="/portals" element={<PortalHub />} />
+        <Route path="/admin" element={<AdminPortal />} />
+        <Route path="/supplier" element={<SupplierPortal />} />
+        <Route path="/inspector" element={<InspectorPortal />} />
+        <Route path="/support" element={<SupportPortal />} />
+      </Routes>
+    );
+  }
 
   return (
     <div className="app-shell">

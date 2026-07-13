@@ -49,6 +49,9 @@ export default function Login() {
         Don't have an account?{" "}
         <button onClick={() => navigate("/signup")} className="text-electric font-semibold">Sign up</button>
       </p>
+      <button onClick={() => navigate("/portals")} className="tap text-center text-[12px] text-slate-300 font-medium mt-3">
+        Staff Portals (Admin, Supplier, Inspector, Support)
+      </button>
     </div>
   );
 }
