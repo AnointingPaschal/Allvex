@@ -5,10 +5,9 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 
 const STEPS = [
-  { id: "contact",     label: "Your Details",      icon: User },
-  { id: "vehicle",     label: "Vehicle Spec",       icon: Car },
-  { id: "preferences", label: "Preferences",        icon: Banknote },
-  { id: "notes",       label: "Final Notes",        icon: MessageSquare },
+  { id: "contact",     label: "Your Details",   icon: User },
+  { id: "preferences", label: "Preferences",    icon: Banknote },
+  { id: "notes",       label: "Confirm & Send", icon: MessageSquare },
 ];
 
 const BUDGETS = ["Under ₦15m", "₦15m – ₦25m", "₦25m – ₦35m", "₦35m – ₦50m", "Over ₦50m", "Flexible"];
@@ -49,9 +48,8 @@ export default function QuoteForm({ vehicle, onClose, onOpenChat }) {
 
   const canNext = [
     form.name.trim() && form.phone.trim(),       // step 0
-    true,                                          // step 1 — all optional
-    form.budget && form.timeline && form.payment,  // step 2
-    true,                                          // step 3
+    form.budget && form.timeline && form.payment,  // step 1
+    true,                                          // step 2
   ];
 
   async function submit() {
@@ -153,36 +151,8 @@ export default function QuoteForm({ vehicle, onClose, onOpenChat }) {
           </>
         )}
 
-        {/* Step 1 — Vehicle spec */}
+        {/* Step 1 — Preferences */}
         {step === 1 && (
-          <>
-            <Label>Preferred colour</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {COLORS.map((c) => (
-                <button key={c} onClick={() => set("color", c)}
-                  className={`px-3 py-1.5 rounded-pill text-[11.5px] font-medium border transition ${form.color === c ? "border-electric bg-blue-50 text-electric" : "border-slate-200 text-slate-500"}`}>
-                  {c}
-                </button>
-              ))}
-            </div>
-            <Label>Condition</Label>
-            <div className="flex gap-2">
-              {["New", "Used", "Either"].map((c) => (
-                <button key={c} onClick={() => set("condition", c)}
-                  className={`flex-1 py-2.5 rounded-xl text-[12.5px] font-semibold border ${form.condition === c ? "border-electric bg-blue-50 text-electric" : "border-slate-200 text-slate-500"}`}>
-                  {c}
-                </button>
-              ))}
-            </div>
-            <Label>Year preference</Label>
-            <QInput value={form.year_pref} onChange={(v) => set("year_pref", v)} placeholder="e.g. 2024 or 2025" />
-            <Label>Specific trim or features (optional)</Label>
-            <QInput value={form.specific_trim} onChange={(v) => set("specific_trim", v)} placeholder="e.g. Long-range AWD, panoramic roof" />
-          </>
-        )}
-
-        {/* Step 2 — Preferences */}
-        {step === 2 && (
           <>
             <Label>Budget range *</Label>
             <div className="space-y-1.5">
@@ -215,7 +185,7 @@ export default function QuoteForm({ vehicle, onClose, onOpenChat }) {
               ))}
             </div>
             <div className="flex gap-3">
-              <TogglePill label="Interested in financing" active={form.finance_interest} onClick={() => set("finance_interest", !form.finance_interest)} />
+              <TogglePill label="Financing interest" active={form.finance_interest} onClick={() => set("finance_interest", !form.finance_interest)} />
               <TogglePill label="I have a trade-in" active={form.trade_in} onClick={() => set("trade_in", !form.trade_in)} />
             </div>
             {form.trade_in && (
@@ -224,35 +194,25 @@ export default function QuoteForm({ vehicle, onClose, onOpenChat }) {
           </>
         )}
 
-        {/* Step 3 — Notes */}
-        {step === 3 && (
+        {/* Step 2 — Notes + summary */}
+        {step === 2 && (
           <>
             <Label>Additional notes</Label>
-            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={4}
-              placeholder="Any specific requirements, questions, or information that would help our advisors..."
+            <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3}
+              placeholder="Any specific requirements, questions, or information for our advisors…"
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-electric resize-none" />
-            <Label>How did you hear about Allvex?</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {["Google", "Instagram", "Friend/Family", "Facebook", "Twitter/X", "Other"].map((h) => (
-                <button key={h} onClick={() => set("hear_about", h)}
-                  className={`px-3 py-1.5 rounded-pill text-[11.5px] font-medium border transition ${form.hear_about === h ? "border-electric bg-blue-50 text-electric" : "border-slate-200 text-slate-500"}`}>
-                  {h}
-                </button>
-              ))}
-            </div>
 
             {/* Summary */}
             <div className="bg-slate-50 rounded-xl p-3.5 space-y-1.5 mt-1">
               <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2">Summary</p>
               {[
                 ["Vehicle", vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.year})` : "—"],
+                ["Price", vehicle ? `₦${Number(vehicle.price).toLocaleString()}` : "—"],
                 ["Name", form.name],
                 ["Phone", form.phone],
                 ["Budget", form.budget],
                 ["Timeline", form.timeline],
                 ["Payment", form.payment],
-                ["Colour", form.color || "Any"],
-                ["Condition", form.condition],
               ].map(([k, v]) => (
                 <div key={k} className="flex justify-between text-[11.5px]">
                   <span className="text-slate-400">{k}</span>

@@ -204,7 +204,7 @@ export default function AccessoryDetail() {
       <div className="fixed bottom-[62px] left-0 right-0 bg-white border-t border-slate-100 p-3.5 z-40 shadow-[0_-4px_16px_rgba(15,23,42,0.08)]">
         <div className="max-w-lg mx-auto flex gap-2.5">
           <button
-            onClick={() => navigate("/cart")}
+            onClick={() => navigate("/checkout")}
             className="tap w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 relative"
           >
             <ShoppingCart size={18} className="text-midnight" />
