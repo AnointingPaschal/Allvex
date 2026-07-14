@@ -77,7 +77,7 @@ export default function VehicleDetails() {
     .map((img) => ({ ...img, category: img.category.charAt(0).toUpperCase() + img.category.slice(1) }));
 
   return (
-    <div className="pb-24 relative">
+    <div className="pb-36 relative">
       <div className="lg:grid lg:grid-cols-5 lg:gap-6 lg:px-8 lg:pt-6">
         <div className="lg:col-span-2 relative">
           <VehicleGallery photos={gallery} verified={v.verified} />
@@ -168,7 +168,7 @@ export default function VehicleDetails() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-3.5 flex gap-2.5 z-40">
+      <div className="fixed bottom-[62px] left-0 right-0 bg-white border-t border-slate-100 p-3 flex gap-2.5 z-40 shadow-[0_-4px_16px_rgba(15,23,42,0.08)]">
         <div className="page w-full flex gap-2.5 mx-auto">
           <button className="tap px-3.5 py-3 rounded-xl border border-slate-200 text-midnight font-semibold text-[12px]">
             Compare

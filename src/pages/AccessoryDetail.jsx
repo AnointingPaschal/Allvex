@@ -53,7 +53,7 @@ export default function AccessoryDetail() {
   const gallery = [product.image_url, ...(product.gallery_urls || [])].filter(Boolean);
 
   return (
-    <div className="pb-32">
+    <div className="pb-36">
       {/* Image gallery */}
       <div className="relative bg-slate-100">
         {gallery.length > 0 ? (
@@ -201,7 +201,7 @@ export default function AccessoryDetail() {
       </div>
 
       {/* Sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-3.5 z-40">
+      <div className="fixed bottom-[62px] left-0 right-0 bg-white border-t border-slate-100 p-3.5 z-40 shadow-[0_-4px_16px_rgba(15,23,42,0.08)]">
         <div className="max-w-lg mx-auto flex gap-2.5">
           <button
             onClick={() => navigate("/cart")}
