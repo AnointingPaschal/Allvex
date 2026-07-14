@@ -16,6 +16,7 @@ import GarageVehicle from "./pages/GarageVehicle.jsx";
 import Assistant from "./pages/Assistant.jsx";
 import Profile from "./pages/Profile.jsx";
 import Checkout from "./pages/Checkout.jsx";
+import Chat from "./pages/Chat.jsx";
 import PortalHub from "./portal/PortalHub.jsx";
 import AdminPortal from "./portal/admin/AdminPortal.jsx";
 import SupplierPortal from "./portal/supplier/SupplierPortal.jsx";
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/assistant"       element={<RequireAuth><Assistant /></RequireAuth>} />
           <Route path="/profile"         element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="/checkout"        element={<RequireAuth><Checkout /></RequireAuth>} />
+          <Route path="/chat"            element={<RequireAuth><Chat /></RequireAuth>} />
         </Routes>
       </div>
       {!noNav && <BottomNav />}

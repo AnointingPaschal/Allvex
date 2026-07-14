@@ -14,26 +14,28 @@ import Notifications from "./sections/Notifications.jsx";
 import Quotes from "./sections/Quotes.jsx";
 import PaymentSettings from "./sections/PaymentSettings.jsx";
 import ImportRequests from "./sections/ImportRequests.jsx";
+import LiveChat from "./sections/LiveChat.jsx";
 import {
   LayoutGrid, Users, PackageCheck, Truck, Car,
   ClipboardCheck, Newspaper, ShoppingBag, Ticket,
-  Bell, MessageSquare, CreditCard, Import,
+  Bell, MessageSquare, CreditCard, MessageCircle,
 } from "lucide-react";
 
 const sections = [
-  { key: "overview",       label: "Overview",         icon: LayoutGrid },
-  { key: "customers",      label: "Customers",        icon: Users },
-  { key: "import_requests",label: "Import Requests",  icon: Import || PackageCheck },
-  { key: "orders",         label: "Import Orders",    icon: PackageCheck },
-  { key: "quotes",         label: "Quotes",           icon: MessageSquare },
-  { key: "suppliers",      label: "Suppliers",        icon: Truck },
-  { key: "vehicles",       label: "Vehicles",         icon: Car },
-  { key: "inspectors",     label: "Inspectors",       icon: ClipboardCheck },
-  { key: "accessories",    label: "Accessories",      icon: ShoppingBag },
-  { key: "tickets",        label: "Support",          icon: Ticket },
-  { key: "content",        label: "Content",          icon: Newspaper },
-  { key: "notifications",  label: "Notifications",    icon: Bell },
-  { key: "payment",        label: "Payment Settings", icon: CreditCard },
+  { key: "overview",        label: "Overview",          icon: LayoutGrid },
+  { key: "customers",       label: "Customers",         icon: Users },
+  { key: "import_requests", label: "Import Requests",   icon: PackageCheck },
+  { key: "orders",          label: "Import Orders",     icon: PackageCheck },
+  { key: "quotes",          label: "Quotes",            icon: MessageSquare },
+  { key: "suppliers",       label: "Suppliers",         icon: Truck },
+  { key: "vehicles",        label: "Vehicles",          icon: Car },
+  { key: "inspectors",      label: "Inspectors",        icon: ClipboardCheck },
+  { key: "accessories",     label: "Accessories",       icon: ShoppingBag },
+  { key: "tickets",         label: "Support",           icon: Ticket },
+  { key: "live_chat",       label: "Live Chat",         icon: MessageCircle },
+  { key: "content",         label: "Content",           icon: Newspaper },
+  { key: "notifications",   label: "Notifications",     icon: Bell },
+  { key: "payment",         label: "Payment Settings",  icon: CreditCard },
 ];
 
 const subtitles = {
@@ -49,7 +51,7 @@ const subtitles = {
   tickets: "Customer support queue and ticket resolution",
   content: "Publish and manage articles in the Content Hub",
   notifications: "Send notifications to users",
-  payment: "Configure Paystack, Flutterwave and manual payment settings",
+  live_chat: "Reply to customer conversations in real-time",
 };
 
 export default function AdminPortal() {
@@ -60,7 +62,7 @@ export default function AdminPortal() {
     overview: Overview, customers: Customers, import_requests: ImportRequests,
     orders: Orders, quotes: Quotes, suppliers: Suppliers, vehicles: Vehicles,
     inspectors: Inspectors, accessories: Accessories, tickets: Tickets,
-    content: Content, notifications: Notifications, payment: PaymentSettings,
+    live_chat: LiveChat, content: Content, notifications: Notifications, payment: PaymentSettings,
   }[active];
 
   return (
