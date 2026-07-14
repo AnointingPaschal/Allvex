@@ -1,33 +1,29 @@
 -- ============================================================================
 -- ALLVEX MEDIA STORAGE
--- Run this in Supabase SQL Editor AFTER schema.sql
--- Also create the bucket manually: Supabase Dashboard → Storage → New Bucket
--- Name: "allvex-media", Public: true
+-- STEP 1: Create the bucket in Supabase Dashboard → Storage → New Bucket
+--         Name: allvex-media   Public: ON
+-- STEP 2: Run this SQL to apply the access policies
 -- ============================================================================
 
--- Storage RLS policies (run after creating the bucket in the dashboard)
-insert into storage.buckets (id, name, public) values ('allvex-media', 'allvex-media', true)
-on conflict (id) do nothing;
-
--- Allow authenticated users to upload
-create policy "Authenticated users can upload media"
+-- Allow any authenticated user to upload to the bucket
+create policy "Authenticated users can upload"
   on storage.objects for insert
-  with check (bucket_id = 'allvex-media' and auth.role() = 'authenticated');
+  to authenticated
+  with check (bucket_id = 'allvex-media');
 
--- Allow public to view
-create policy "Public media is viewable"
+-- Allow public (anonymous) read access to all files
+create policy "Public can view files"
   on storage.objects for select
   using (bucket_id = 'allvex-media');
 
--- Allow users to delete their own uploads
-create policy "Users can delete own uploads"
-  on storage.objects for delete
-  using (bucket_id = 'allvex-media' and auth.uid() = owner);
+-- Allow users to update/replace their own uploads
+create policy "Users can update own files"
+  on storage.objects for update
+  to authenticated
+  using (bucket_id = 'allvex-media');
 
--- Allow admins to delete any upload
-create policy "Admins can delete any upload"
+-- Allow users to delete their own uploads
+create policy "Users can delete own files"
   on storage.objects for delete
-  using (
-    bucket_id = 'allvex-media'
-    and exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
-  );
+  to authenticated
+  using (bucket_id = 'allvex-media');

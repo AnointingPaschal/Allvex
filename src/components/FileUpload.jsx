@@ -34,7 +34,13 @@ export default function FileUpload({ value, onChange, folder = "misc", accept = 
     });
 
     if (upErr) {
-      setError(upErr.message);
+      if (upErr.message?.toLowerCase().includes("bucket")) {
+        setError("Storage bucket not found. Go to Supabase → Storage → New Bucket, create 'allvex-media' (Public: ON), then run supabase/storage.sql.");
+      } else if (upErr.message?.toLowerCase().includes("policy") || upErr.statusCode === "403") {
+        setError("Upload permission denied. Run supabase/storage.sql in your Supabase SQL Editor to set access policies.");
+      } else {
+        setError(upErr.message || "Upload failed.");
+      }
       setUploading(false);
       return;
     }
@@ -42,7 +48,6 @@ export default function FileUpload({ value, onChange, folder = "misc", accept = 
     const { data: { publicUrl } } = supabase.storage.from("allvex-media").getPublicUrl(data.path);
     onChange(publicUrl);
     setUploading(false);
-    // reset input so same file can be re-selected
     e.target.value = "";
   }
 
@@ -68,7 +73,7 @@ export default function FileUpload({ value, onChange, folder = "misc", accept = 
             {uploading ? <Loader2 size={11} className="animate-spin" /> : <Upload size={11} />}
             {uploading ? "Uploading…" : "Upload"}
           </button>
-          {error && <p className="text-[10.5px] text-danger mt-1">{error}</p>}
+          {error && <p className="text-[10.5px] text-danger mt-1 leading-snug max-w-[200px]">{error}</p>}
         </div>
       </div>
     );
