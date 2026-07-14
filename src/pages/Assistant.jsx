@@ -1,357 +1,416 @@
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, Sparkles, Car, ChevronDown, X, Wrench, MessageCircle, AlertTriangle } from "lucide-react";
+import { Bot, Send, Sparkles, Car, ChevronDown, X, Search, AlertTriangle, Wrench } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { obdCodes, severityConfig, systemLabels, findCode } from "../data/obdCodes.js";
 
-const mdComponents = {
-  p: ({ node, ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
-  strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
-  em: ({ node, ...props }) => <em className="italic" {...props} />,
-  ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2 last:mb-0 space-y-1" {...props} />,
-  ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2 last:mb-0 space-y-1" {...props} />,
-  li: ({ node, ...props }) => <li className="leading-snug" {...props} />,
-  h1: ({ node, ...props }) => <p className="font-bold text-[13.5px] mb-1.5" {...props} />,
-  h2: ({ node, ...props }) => <p className="font-bold text-[13px] mb-1.5" {...props} />,
-  h3: ({ node, ...props }) => <p className="font-semibold text-[12.5px] mb-1" {...props} />,
-  code: ({ node, ...props }) => <code className="bg-black/5 px-1 py-0.5 rounded text-[11.5px] font-mono" {...props} />,
-  a: ({ node, ...props }) => <a className="underline font-medium" target="_blank" rel="noreferrer" {...props} />,
-  table: ({ node, ...props }) => (
-    <div className="overflow-x-auto -mx-1 mb-2 last:mb-0">
-      <table className="text-[11px] border-collapse min-w-max" {...props} />
-    </div>
-  ),
-  thead: ({ node, ...props }) => <thead className="bg-black/5" {...props} />,
-  th: ({ node, ...props }) => <th className="px-2 py-1.5 text-left font-semibold border-b border-black/10 whitespace-nowrap" {...props} />,
-  td: ({ node, ...props }) => <td className="px-2 py-1.5 border-b border-black/5 align-top" {...props} />,
-};
-
-const suggestions = [
-  "Where is my car?",
-  "Compare BYD vs GAC",
-  "Find SUV under ₦20m",
-  "Why is my health score dropping?",
+const SUGGESTIONS = [
+  "What does P0420 mean?",
+  "Compare BYD Seal vs GAC GS8",
+  "How much to import from China to Lagos?",
+  "P0300 misfire — what should I check first?",
+  "My car shakes at idle — what's wrong?",
+  "Why is my check engine light flashing?",
 ];
 
-const SYSTEM_PROMPT = `You are the Allvex Assistant, the in-app automotive AI for the Allvex platform (vehicle import, ownership, and maintenance for African customers).
+const QUICK_MODES = [
+  { key: "diagnose", label: "Diagnose a Code", icon: AlertTriangle, prompt: "I have an OBD code: " },
+  { key: "maintenance", label: "Maintenance", icon: Wrench, prompt: "I need maintenance advice: " },
+  { key: "compare", label: "Compare Vehicles", icon: Car, prompt: "Compare " },
+];
 
-You help with:
-- Diagnosing OBD-II / check-engine error codes (e.g. P0301, P0420): explain what the code means, likely causes ranked by probability, whether it's safe to keep driving, and recommended next steps.
-- General car maintenance questions and schedules (oil changes, brake service, tyres, battery, etc).
-- Vehicle comparisons, import tracking questions, and general Allvex platform questions.
-
-Style rules:
-- Keep answers concise and scannable — this is a narrow mobile chat bubble (roughly 300px wide). Use short paragraphs or a tight bullet list.
-- NEVER use markdown tables. Tables do not render usably in a narrow chat bubble — they break into unreadable stacked fragments. For maintenance checklists, comparisons, or any structured data, use a bullet list instead: a bold lead-in (e.g. "**Every 5,000 km or 6 months**") followed by 1-2 short lines of detail, not a multi-column grid.
-- When diagnosing a code, structure the answer as: what it means, likely causes (ranked), urgency/safety, recommended action — as short bullets, not a table.
-- Always recommend a certified inspection for anything safety-critical (brakes, steering, airbags, structural) rather than DIY instructions for those systems.
-- Don't invent vehicle-specific data (mileage, service history) beyond what's given in the conversation context.
-- Be direct and practical, not overly cautious or repetitive with disclaimers.`;
+// ── Table component that makes markdown tables scrollable ──────────────────
+function SafeTable({ children, ...props }) {
+  return (
+    <div className="overflow-x-auto my-2 rounded-xl border border-slate-100">
+      <table className="text-[12px] w-full" {...props}>{children}</table>
+    </div>
+  );
+}
 
 export default function Assistant() {
   const { profile } = useAuth();
   const [garageVehicles, setGarageVehicles] = useState([]);
-  const [messages, setMessages] = useState([
-    { from: "ai", text: "Hi Alex. I'm your Allvex assistant. I can diagnose check-engine codes, answer maintenance questions, or help with imports. Pick a vehicle below to get started." },
-  ]);
+  const [vehicle, setVehicle] = useState(null);
+  const [showVehicleMenu, setShowVehicleMenu] = useState(false);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [vehicle, setVehicle] = useState(null); // { label, brand, model, year, mileage }
-  const [showVehiclePicker, setShowVehiclePicker] = useState(false);
-  const [showDiagnose, setShowDiagnose] = useState(false);
-  const [customVehicle, setCustomVehicle] = useState({ brand: "", model: "", year: "" });
-  const [code, setCode] = useState("");
-  const [symptoms, setSymptoms] = useState("");
+  const [tab, setTab] = useState("chat"); // "chat" | "codes"
+  const [codeQuery, setCodeQuery] = useState("");
+  const [selectedCode, setSelectedCode] = useState(null);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+  const abortRef = useRef(null);
 
+  // Load greeting and garage vehicles
   useEffect(() => {
     if (!profile) return;
-    setMessages((m) => {
-      const first = m[0];
-      if (first?.from === "ai" && first.text.startsWith("Hi Alex")) {
-        return [{ ...first, text: first.text.replace("Hi Alex", `Hi ${profile.full_name?.split(" ")[0] || "there"}`) }, ...m.slice(1)];
-      }
-      return m;
-    });
-    supabase.from("garage_vehicles").select("id, nickname, brand, model, year, mileage").eq("owner_id", profile.id)
+    const name = profile.full_name?.split(" ")[0] || "there";
+    setMessages([{
+      from: "ai",
+      text: `Hi ${name}! I'm your Allvex assistant. I can diagnose check-engine codes, answer maintenance questions, compare vehicles, or help with your import. What do you need?`,
+    }]);
+    supabase.from("garage_vehicles").select("id, nickname, brand, model, year, mileage")
+      .eq("owner_id", profile.id)
       .then(({ data }) => setGarageVehicles(data || []));
   }, [profile]);
 
+  // Auto-scroll to latest message
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages]);
 
   function vehicleContextLine() {
     if (!vehicle) return "";
-    return `Vehicle context: ${vehicle.brand} ${vehicle.model} (${vehicle.year})${vehicle.mileage ? `, ${vehicle.mileage.toLocaleString()} km` : ""}.`;
+    return `User's vehicle: ${vehicle.nickname} — ${vehicle.brand} ${vehicle.model} (${vehicle.year}), ${vehicle.mileage?.toLocaleString()} km.`;
   }
 
-  async function callAssistant(history, userText) {
+  // ── Streaming send ─────────────────────────────────────────────────────────
+  async function send(overrideText) {
+    const text = (overrideText ?? input).trim();
+    if (!text || loading) return;
+    setInput("");
     setLoading(true);
-    const apiMessages = [
-      { role: "system", content: SYSTEM_PROMPT + (vehicle ? `\n\n${vehicleContextLine()}` : "") },
-      ...history.map((m) => ({ role: m.from === "ai" ? "assistant" : "user", content: m.text })),
-      { role: "user", content: userText },
-    ];
+
+    const userMsg = { from: "user", text };
+    const history = [
+      ...messages.filter((m) => m.from !== "typing"),
+      userMsg,
+    ].map((m) => ({ role: m.from === "user" ? "user" : "assistant", content: m.text }));
+
+    setMessages((prev) => [...prev.filter((m) => m.from !== "typing"), userMsg, { from: "ai", text: "", streaming: true }]);
 
     try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages }),
+        signal: controller.signal,
+        body: JSON.stringify({
+          messages: history.slice(-12), // keep last 12 turns for context
+          vehicleContext: vehicleContextLine(),
+        }),
       });
-      const data = await res.json();
 
-      if (!res.ok) {
-        const friendly =
-          data.error === "missing_api_key"
-            ? "AI isn't connected yet — the site owner needs to add an OPENROUTER_API_KEY in Vercel project settings."
-            : "I couldn't reach the AI service just now. Please try again in a moment.";
-        setMessages((m) => [...m, { from: "ai", text: friendly, isError: true }]);
-        return;
+      if (!res.ok) throw new Error("API error");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let content = "";
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? ""; // keep incomplete last line in buffer
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(data);
+            const token = parsed.choices?.[0]?.delta?.content ?? "";
+            if (token) {
+              content += token;
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.streaming) updated[updated.length - 1] = { ...last, text: content };
+                return updated;
+              });
+            }
+          } catch {
+            // skip malformed SSE lines
+          }
+        }
       }
 
-      setMessages((m) => [...m, { from: "ai", text: data.reply }]);
-    } catch {
-      setMessages((m) => [...m, { from: "ai", text: "Connection error — please check your internet and try again.", isError: true }]);
-    } finally {
-      setLoading(false);
+      // Finalise — remove streaming flag
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated[updated.length - 1];
+        if (last?.streaming) updated[updated.length - 1] = { from: "ai", text: content || "Sorry, I couldn't generate a response. Please try again." };
+        return updated;
+      });
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.streaming) updated[updated.length - 1] = { from: "ai", text: "Connection error. Please check your internet and try again." };
+          return updated;
+        });
+      }
     }
+
+    setLoading(false);
   }
 
-  function send(text) {
-    if (!text.trim() || loading) return;
-    const next = [...messages, { from: "user", text }];
-    setMessages(next);
-    setInput("");
-    callAssistant(messages, text);
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
   }
 
-  function submitDiagnosis() {
-    if (!code.trim()) return;
-    const text = `Diagnose error code ${code.trim().toUpperCase()}.${symptoms.trim() ? ` Symptoms: ${symptoms.trim()}.` : ""}`;
-    setShowDiagnose(false);
-    setCode("");
-    setSymptoms("");
-    send(text);
-  }
+  // ── OBD code browser ──────────────────────────────────────────────────────
+  const filteredCodes = codeQuery.length >= 2
+    ? findCode(codeQuery)
+    : obdCodes.filter((_, i) => i < 20);
 
-  function pickVehicle(v) {
-    setVehicle(v);
-    setShowVehiclePicker(false);
+  function askAboutCode(code) {
+    setSelectedCode(null);
+    setTab("chat");
+    send(`Explain OBD code ${code.code} — ${code.name}. What symptoms will I notice and what should I do first?`);
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      {/* Header */}
-      <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-3.5 bg-midnight text-white rounded-b-[24px]">
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-9 h-9 rounded-full bg-electric flex items-center justify-center shrink-0">
-            <Bot size={16} />
+    <div className="flex flex-col h-full min-h-0" style={{ height: "calc(100vh - 62px)" }}>
+      {/* ── Header ── */}
+      <div className="px-4 sm:px-6 py-3 bg-midnight text-white border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-electric flex items-center justify-center">
+              <Bot size={16} className="text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-[14px] leading-tight">Allvex Assistant</p>
+              <p className="text-slate-400 text-[10px]">Diagnostics & maintenance, powered by AI</p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold text-[13px]">Allvex Assistant</p>
-            <p className="text-[10px] text-slate-400">Diagnostics & maintenance, powered by AI</p>
+          {/* Tab toggle */}
+          <div className="flex gap-1 bg-white/10 p-0.5 rounded-lg">
+            <button onClick={() => setTab("chat")} className={`px-2.5 py-1 rounded-md text-[10.5px] font-semibold transition ${tab === "chat" ? "bg-white text-midnight" : "text-white"}`}>Chat</button>
+            <button onClick={() => setTab("codes")} className={`px-2.5 py-1 rounded-md text-[10.5px] font-semibold transition ${tab === "codes" ? "bg-white text-midnight" : "text-white"}`}>OBD Codes</button>
           </div>
         </div>
 
-        {/* Vehicle context selector */}
-        <button
-          onClick={() => setShowVehiclePicker(true)}
-          className="tap w-full flex items-center justify-between gap-2 bg-white/10 rounded-xl px-3.5 py-2.5"
-        >
-          <span className="flex items-center gap-2 text-[12px] text-slate-200 truncate">
-            <Car size={13} className="shrink-0" />
-            {vehicle ? `${vehicle.brand} ${vehicle.model} (${vehicle.year})` : "Select a vehicle for context"}
-          </span>
-          <ChevronDown size={14} className="text-slate-400 shrink-0" />
-        </button>
-      </div>
+        {/* Vehicle selector */}
+        {tab === "chat" && (
+          <div className="relative">
+            <button
+              onClick={() => setShowVehicleMenu((s) => !s)}
+              className="tap w-full flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2 text-left"
+            >
+              <Car size={13} className="text-slate-300 shrink-0" />
+              <span className="text-[12px] text-slate-300 flex-1 truncate">
+                {vehicle ? `${vehicle.nickname} — ${vehicle.brand} ${vehicle.model}` : "Select a vehicle for context"}
+              </span>
+              <ChevronDown size={13} className={`text-slate-400 shrink-0 transition-transform ${showVehicleMenu ? "rotate-180" : ""}`} />
+            </button>
 
-      {/* Quick action bar */}
-      <div className="px-4 sm:px-6 lg:px-8 pt-3 flex gap-2 max-w-2xl w-full mx-auto">
-        <button
-          onClick={() => setShowDiagnose(true)}
-          className="tap flex-1 flex items-center justify-center gap-1.5 bg-white shadow-card rounded-xl py-2.5 text-[11.5px] font-semibold text-midnight"
-        >
-          <AlertTriangle size={13} className="text-warning" /> Diagnose a code
-        </button>
-        <button
-          onClick={() => send("Give me a quick maintenance checklist for my vehicle.")}
-          className="tap flex-1 flex items-center justify-center gap-1.5 bg-white shadow-card rounded-xl py-2.5 text-[11.5px] font-semibold text-midnight"
-        >
-          <Wrench size={13} className="text-electric" /> Maintenance
-        </button>
-        <button
-          onClick={() => setInput("")}
-          className="tap flex-1 flex items-center justify-center gap-1.5 bg-white shadow-card rounded-xl py-2.5 text-[11.5px] font-semibold text-midnight"
-        >
-          <MessageCircle size={13} className="text-electric" /> Ask anything
-        </button>
-      </div>
-
-      {/* Chat */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-2.5 max-w-2xl w-full mx-auto">
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`msg-in max-w-[85%] px-3.5 py-2.5 rounded-xl text-[12.5px] ${
-              m.from === "ai"
-                ? m.isError
-                  ? "bg-red-50 text-danger self-start"
-                  : "bg-white shadow-card text-midnight self-start"
-                : "bg-electric text-white self-end whitespace-pre-wrap leading-relaxed"
-            }`}
-          >
-            {m.from === "ai" ? (
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                {m.text}
-              </ReactMarkdown>
-            ) : (
-              m.text
+            {showVehicleMenu && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl z-20 overflow-hidden">
+                <button onClick={() => { setVehicle(null); setShowVehicleMenu(false); }}
+                  className="tap w-full px-3.5 py-2.5 text-left text-[12px] text-slate-400 border-b border-slate-50">
+                  No vehicle context
+                </button>
+                {garageVehicles.map((v) => (
+                  <button key={v.id} onClick={() => { setVehicle(v); setShowVehicleMenu(false); }}
+                    className={`tap w-full px-3.5 py-2.5 text-left text-[12.5px] font-medium text-midnight hover:bg-slate-50 ${vehicle?.id === v.id ? "bg-blue-50 text-electric" : ""}`}>
+                    {v.nickname} — {v.brand} {v.model} ({v.year})
+                  </button>
+                ))}
+                {garageVehicles.length === 0 && (
+                  <p className="px-3.5 py-3 text-[12px] text-slate-400">No vehicles in your garage yet.</p>
+                )}
+              </div>
             )}
           </div>
-        ))}
-
-        {loading && (
-          <div className="msg-in max-w-[85%] px-3.5 py-2.5 rounded-xl bg-white shadow-card self-start flex gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.3s]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce [animation-delay:-0.15s]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-bounce" />
-          </div>
-        )}
-
-        {messages.length === 1 && (
-          <div className="mt-1.5">
-            <p className="text-[10.5px] text-slate-400 mb-2 flex items-center gap-1.5"><Sparkles size={11} /> Try asking</p>
-            <div className="flex flex-col gap-1.5">
-              {suggestions.map((s) => (
-                <button key={s} onClick={() => send(s)} className="tap text-left bg-white shadow-card rounded-xl px-3.5 py-2.5 text-[12px] text-midnight font-medium">
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
         )}
       </div>
 
-      {/* Input */}
-      <div className="px-4 sm:px-6 lg:px-8 pb-4 pt-1.5 max-w-2xl w-full mx-auto">
-        <div className="flex items-center gap-2 bg-white shadow-card rounded-xl px-3.5 py-2">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send(input)}
-            placeholder="Ask Allvex AI..."
-            className="flex-1 bg-transparent outline-none text-[12.5px] placeholder:text-slate-400"
-          />
-          <button onClick={() => send(input)} disabled={loading} className="tap w-7 h-7 rounded-full bg-electric flex items-center justify-center shrink-0 disabled:opacity-50">
-            <Send size={12} className="text-white" />
-          </button>
-        </div>
-      </div>
+      {/* ── CHAT TAB ── */}
+      {tab === "chat" && (
+        <>
+          {/* Quick mode chips */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar px-4 sm:px-6 py-2.5 border-b border-slate-100 shrink-0">
+            {QUICK_MODES.map((m) => (
+              <button key={m.key} onClick={() => { setInput(m.prompt); inputRef.current?.focus(); }}
+                className="tap flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-pill px-3 py-1.5 text-[11.5px] font-semibold text-midnight whitespace-nowrap shrink-0 hover:border-electric hover:text-electric transition">
+                <m.icon size={11} /> {m.label}
+              </button>
+            ))}
+          </div>
 
-      {/* Vehicle picker sheet */}
-      {showVehiclePicker && (
-        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50" onClick={() => setShowVehiclePicker(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="bg-white w-full sm:w-[420px] sm:rounded-xl rounded-t-[24px] p-5 pb-7 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[14.5px] font-bold text-midnight">Select a vehicle</h3>
-              <button onClick={() => setShowVehiclePicker(false)}><X size={18} className="text-slate-400" /></button>
-            </div>
-
-            <p className="text-[11px] font-semibold text-slate-400 mb-2">Your Garage</p>
-            <div className="flex flex-col gap-2 mb-4">
-              {garageVehicles.map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => pickVehicle({ label: v.nickname, brand: v.brand, model: v.model, year: v.year, mileage: v.mileage })}
-                  className="tap flex items-center justify-between bg-slate-50 rounded-xl px-3.5 py-3 text-left"
-                >
-                  <div>
-                    <p className="text-[12.5px] font-semibold text-midnight">{v.nickname}</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{v.brand} {v.model} · {v.year} · {v.mileage.toLocaleString()} km</p>
-                  </div>
-                  <Car size={15} className="text-electric shrink-0" />
-                </button>
-              ))}
-            </div>
-
-            <p className="text-[11px] font-semibold text-slate-400 mb-2">Other vehicle</p>
-            <div className="flex flex-col gap-2.5">
-              <div className="grid grid-cols-2 gap-2.5">
-                <input
-                  placeholder="Brand (e.g. Honda)"
-                  value={customVehicle.brand}
-                  onChange={(e) => setCustomVehicle((c) => ({ ...c, brand: e.target.value }))}
-                  className="bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-2.5 text-[12.5px] outline-none"
-                />
-                <input
-                  placeholder="Model"
-                  value={customVehicle.model}
-                  onChange={(e) => setCustomVehicle((c) => ({ ...c, model: e.target.value }))}
-                  className="bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-2.5 text-[12.5px] outline-none"
-                />
+          {/* Messages */}
+          <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
+            {/* Welcome suggestions */}
+            {messages.length <= 1 && (
+              <div className="space-y-2 mt-1">
+                <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5"><Sparkles size={11} /> Try asking</p>
+                {SUGGESTIONS.map((s) => (
+                  <button key={s} onClick={() => send(s)}
+                    className="tap w-full text-left px-3.5 py-2.5 rounded-xl bg-white border border-slate-100 text-[12.5px] text-midnight hover:border-electric hover:bg-blue-50 transition">
+                    {s}
+                  </button>
+                ))}
               </div>
-              <input
-                placeholder="Year"
-                value={customVehicle.year}
-                onChange={(e) => setCustomVehicle((c) => ({ ...c, year: e.target.value }))}
-                className="bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-2.5 text-[12.5px] outline-none"
+            )}
+
+            {messages.map((m, i) => (
+              <div key={i} className={`flex gap-2.5 ${m.from === "user" ? "justify-end" : "justify-start"}`}>
+                {m.from !== "user" && (
+                  <div className="w-7 h-7 rounded-full bg-electric flex items-center justify-center shrink-0 mt-0.5">
+                    <Bot size={13} className="text-white" />
+                  </div>
+                )}
+                <div className={`max-w-[85%] sm:max-w-[75%] ${m.from === "user" ? "items-end" : "items-start"} flex flex-col`}>
+                  <div className={`px-3.5 py-2.5 rounded-2xl text-[13px] leading-relaxed ${
+                    m.from === "user"
+                      ? "bg-electric text-white rounded-br-sm"
+                      : "bg-white border border-slate-100 text-midnight rounded-bl-sm shadow-sm"
+                  }`}>
+                    {m.from === "user" ? (
+                      <span>{m.text}</span>
+                    ) : (
+                      <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{ table: SafeTable }}
+                        >
+                          {m.text}
+                        </ReactMarkdown>
+                        {m.streaming && <span className="inline-block w-1.5 h-3.5 bg-electric rounded-sm ml-0.5 animate-pulse" />}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div className="shrink-0 px-3.5 py-3 border-t border-slate-100 bg-white">
+            <div className="flex items-end gap-2.5 max-w-2xl mx-auto">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 100) + "px";
+                }}
+                onKeyDown={handleKey}
+                placeholder="Ask Allvex AI…"
+                rows={1}
+                disabled={loading}
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-electric transition resize-none max-h-24 disabled:opacity-60"
+                style={{ minHeight: 42 }}
               />
               <button
-                onClick={() => {
-                  if (!customVehicle.brand.trim() || !customVehicle.model.trim()) return;
-                  pickVehicle({ label: `${customVehicle.brand} ${customVehicle.model}`, brand: customVehicle.brand, model: customVehicle.model, year: customVehicle.year || "—" });
-                  setCustomVehicle({ brand: "", model: "", year: "" });
-                }}
-                className="tap w-full py-3 rounded-xl bg-electric text-white font-semibold text-[13px]"
+                onClick={() => send()}
+                disabled={!input.trim() || loading}
+                className="tap w-10 h-10 rounded-xl bg-electric flex items-center justify-center shrink-0 self-end disabled:opacity-40 transition"
               >
-                Use this vehicle
+                <Send size={15} className="text-white" />
               </button>
-              {vehicle && (
-                <button onClick={() => { setVehicle(null); setShowVehiclePicker(false); }} className="tap w-full py-2.5 text-[12px] font-medium text-slate-400">
-                  Clear selection
-                </button>
-              )}
             </div>
+          </div>
+        </>
+      )}
+
+      {/* ── OBD CODE BROWSER TAB ── */}
+      {tab === "codes" && (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="px-4 sm:px-6 py-3 border-b border-slate-100 sticky top-0 bg-white z-10">
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+              <Search size={14} className="text-slate-400 shrink-0" />
+              <input value={codeQuery} onChange={(e) => setCodeQuery(e.target.value)}
+                placeholder="Search code (e.g. P0420) or keyword (e.g. misfire)…"
+                className="bg-transparent outline-none text-[12.5px] w-full placeholder:text-slate-400" />
+              {codeQuery && <button onClick={() => setCodeQuery("")}><X size={13} className="text-slate-400" /></button>}
+            </div>
+            <p className="text-[10.5px] text-slate-400 mt-1.5">{filteredCodes.length} code{filteredCodes.length !== 1 ? "s" : ""} {codeQuery.length >= 2 ? "found" : "— type to search all 80+"}</p>
+          </div>
+
+          <div className="px-4 sm:px-6 pb-4 space-y-2 pt-2">
+            {filteredCodes.map((c) => {
+              const sev = severityConfig[c.severity];
+              return (
+                <button key={c.code} onClick={() => setSelectedCode(c)}
+                  className="tap w-full text-left bg-white rounded-xl border border-slate-100 shadow-sm p-3.5 hover:border-electric transition">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-[13.5px] text-midnight font-mono">{c.code}</span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-pill ${sev.bg} ${sev.color}`}>{sev.label}</span>
+                      </div>
+                      <p className="text-[12px] font-semibold text-midnight mt-0.5">{c.name}</p>
+                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{c.symptoms}</p>
+                    </div>
+                    <span className="text-[10px] text-slate-300 shrink-0 mt-0.5">{c.subsystem}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Diagnose code sheet */}
-      {showDiagnose && (
-        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50" onClick={() => setShowDiagnose(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="bg-white w-full sm:w-[420px] sm:rounded-xl rounded-t-[24px] p-5 pb-7">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[14.5px] font-bold text-midnight">Diagnose a Code</h3>
-              <button onClick={() => setShowDiagnose(false)}><X size={18} className="text-slate-400" /></button>
-            </div>
-            <p className="text-[11px] text-slate-400 mb-4">
-              {vehicle ? `For your ${vehicle.brand} ${vehicle.model}` : "Select a vehicle first for a more accurate diagnosis"}
-            </p>
-            <div className="flex flex-col gap-2.5">
-              <input
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="Error code (e.g. P0301)"
-                className="bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-2.5 text-[12.5px] outline-none uppercase"
-              />
-              <textarea
-                value={symptoms}
-                onChange={(e) => setSymptoms(e.target.value)}
-                rows={3}
-                placeholder="Symptoms (optional) — rough idle, warning light, unusual noise..."
-                className="bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-2.5 text-[12.5px] outline-none resize-none"
-              />
-              <button onClick={submitDiagnosis} className="tap w-full py-3 rounded-xl bg-electric text-white font-semibold text-[13px] mt-1">
-                Get Diagnosis
-              </button>
-            </div>
+      {/* ── Code detail drawer ── */}
+      {selectedCode && (
+        <div className="fixed inset-0 bg-black/40 flex items-end z-50" onClick={() => setSelectedCode(null)}>
+          <div onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-t-[28px] w-full max-h-[80vh] overflow-y-auto">
+            <div className="w-10 h-1 bg-slate-200 rounded-pill mx-auto mt-3 mb-4" />
+
+            {(() => {
+              const c = selectedCode;
+              const sev = severityConfig[c.severity];
+              return (
+                <div className="px-5 pb-8 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-black text-[20px] text-midnight font-mono">{c.code}</p>
+                      <p className="text-[14px] font-semibold text-midnight mt-0.5">{c.name}</p>
+                    </div>
+                    <span className={`text-[10.5px] font-bold px-2.5 py-1 rounded-xl shrink-0 mt-1 ${sev.bg} ${sev.color} border ${sev.border}`}>{sev.label}</span>
+                  </div>
+
+                  {c.severity === "critical" && (
+                    <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 rounded-xl px-3.5 py-3">
+                      <AlertTriangle size={16} className="text-red-600 shrink-0" />
+                      <p className="text-[12px] font-semibold text-red-700">Stop driving until this is resolved.</p>
+                    </div>
+                  )}
+
+                  <Section title="🩺 Symptoms you'll notice" text={c.symptoms} />
+                  <Section title="🔍 Likely causes" text={c.causes} />
+                  <Section title="🔧 How to fix it" text={c.fixes} />
+
+                  <div className="flex gap-2.5 pt-1">
+                    <button onClick={() => askAboutCode(c)}
+                      className="tap flex-1 py-3 rounded-xl bg-electric text-white font-bold text-[13px]">
+                      Ask AI about {c.code}
+                    </button>
+                    <button onClick={() => setSelectedCode(null)}
+                      className="tap px-4 py-3 rounded-xl bg-slate-100 text-midnight font-semibold text-[13px]">
+                      Close
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function Section({ title, text }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{title}</p>
+      <p className="text-[13px] text-slate-700 leading-relaxed">{text}</p>
     </div>
   );
 }
