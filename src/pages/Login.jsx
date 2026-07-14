@@ -82,7 +82,7 @@ export default function Login() {
       </div>
 
       {/* ── Right panel (form) ── */}
-      <div className="flex-1 flex flex-col min-h-screen bg-[#F6F8FB]">
+      <div className="flex-1 flex flex-col min-h-screen bg-white">
         {/* Mobile header */}
         <div className="lg:hidden flex items-center gap-2.5 px-6 py-5 bg-midnight">
           <div className="w-8 h-8 rounded-xl bg-electric flex items-center justify-center">

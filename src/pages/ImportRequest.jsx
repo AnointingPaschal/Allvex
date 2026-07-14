@@ -41,7 +41,7 @@ export default function ImportRequest() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-[#F6F8FB] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-white flex items-center justify-center px-6">
         <div className="bg-white rounded-2xl shadow-card p-8 max-w-sm w-full text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto">
             <Check size={28} className="text-success" strokeWidth={2.5} />
@@ -60,7 +60,7 @@ export default function ImportRequest() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F8FB] pb-10">
+    <div className="min-h-screen bg-white pb-10">
       <div className="bg-midnight text-white px-4 sm:px-6 pt-6 pb-5">
         <div className="flex items-center gap-3 mb-5">
           <button onClick={() => step > 0 ? setStep(step - 1) : navigate(-1)}

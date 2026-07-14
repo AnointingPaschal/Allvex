@@ -119,7 +119,7 @@ export default function Checkout() {
   const canProceedToPayment = shipping.name && shipping.phone && shipping.address && shipping.city && shipping.state;
 
   return (
-    <div className="min-h-screen bg-[#F6F8FB] pb-10">
+    <div className="min-h-screen bg-white pb-10">
       {/* Header */}
       <div className="bg-white border-b border-slate-100 sticky top-0 z-30">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">

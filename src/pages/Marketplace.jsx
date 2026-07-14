@@ -4,6 +4,7 @@ import { Search, SlidersHorizontal, Heart, GitCompareArrows, BadgeCheck, Shoppin
 import VehicleArt from "../components/VehicleArt.jsx";
 import { supabase } from "../lib/supabase.js";
 import { useCart } from "../context/CartContext.jsx";
+import { pageCache } from "../lib/cache.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const categories = ["All", "SUV", "Sedan", "Electric", "Pickup", "Luxury"];
@@ -26,20 +27,27 @@ export default function Marketplace() {
 
   useEffect(() => {
     async function load() {
-      setLoading(true);
+      // Show cached data instantly
+      const cached = pageCache.get("marketplace");
+      if (cached) {
+        setVehicles(cached.vehicles);
+        setAccessories(cached.accessories);
+        setLoading(false);
+      }
+
       const [vRes, aRes] = await Promise.all([
         supabase.from("vehicles").select("*, vehicle_images(url,category,position)").eq("status", "live")
           .order("position", { foreignTable: "vehicle_images" }),
         supabase.from("accessories").select("*"),
       ]);
-      setVehicles(
-        (vRes.data || []).map((v) => {
-          const imgs = v.vehicle_images || [];
-          const hero = imgs.find((i) => i.category === "exterior") || imgs[0];
-          return { ...v, image: hero?.url };
-        })
-      );
+      const vData = (vRes.data || []).map((v) => {
+        const imgs = v.vehicle_images || [];
+        const hero = imgs.find((i) => i.category === "exterior") || imgs[0];
+        return { ...v, image: hero?.url };
+      });
+      setVehicles(vData);
       setAccessories(aRes.data || []);
+      pageCache.set("marketplace", { vehicles: vData, accessories: aRes.data || [] });
       setLoading(false);
     }
     load();

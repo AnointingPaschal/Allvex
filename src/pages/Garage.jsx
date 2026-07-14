@@ -5,6 +5,7 @@ import VehicleArt from "../components/VehicleArt.jsx";
 import FileUpload from "../components/FileUpload.jsx";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { pageCache } from "../lib/cache.js";
 
 function healthColor(h) {
   if (h >= 85) return "text-success";
@@ -30,13 +31,17 @@ export default function Garage() {
 
   async function load() {
     if (!profile) return;
-    setLoading(true);
+    // Show cached instantly
+    const cached = pageCache.get(`garage-${profile.id}`);
+    if (cached) { setVehicles(cached); setLoading(false); }
+
     const { data } = await supabase
       .from("garage_vehicles")
       .select("*, maintenance_reminders(*)")
       .eq("owner_id", profile.id)
       .order("created_at", { ascending: false });
     setVehicles(data || []);
+    pageCache.set(`garage-${profile.id}`, data || []);
     setLoading(false);
   }
 

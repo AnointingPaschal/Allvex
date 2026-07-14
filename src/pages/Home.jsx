@@ -5,6 +5,7 @@ import VehicleArt from "../components/VehicleArt.jsx";
 import HeroCarousel from "../components/HeroCarousel.jsx";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { pageCache } from "../lib/cache.js";
 
 const levelStyles = {
   upcoming: "bg-blue-50 text-electric",
@@ -48,6 +49,19 @@ export default function Home() {
     if (!profile) return;
     let cancelled = false;
 
+    // Show cached data instantly, then refresh in background
+    const cached = pageCache.get("home");
+    if (cached) {
+      setVehicles(cached.vehicles);
+      setGarageVehicles(cached.garageVehicles);
+      setReminders(cached.reminders);
+      setActiveImport(cached.activeImport);
+      setArticles(cached.articles);
+      setAccessories(cached.accessories);
+      setUnreadCount(cached.unreadCount);
+      setLoading(false);
+    }
+
     async function load() {
       setLoading(true);
 
@@ -75,6 +89,17 @@ export default function Home() {
       setArticles(articlesRes.data || []);
       setAccessories(accessoriesRes.data || []);
       setUnreadCount(notifRes.count || 0);
+
+      // Cache for instant revisits
+      pageCache.set("home", {
+        vehicles: (vehiclesRes.data || []).map(withHeroImage),
+        garageVehicles: garageRes.data || [],
+        reminders: (garageRes.data || []).flatMap((g) => (g.maintenance_reminders || []).map((r) => ({ ...r, vehicleName: g.nickname }))).slice(0, 4),
+        activeImport: importRes.data?.[0] || null,
+        articles: articlesRes.data || [],
+        accessories: accessoriesRes.data || [],
+        unreadCount: notifRes.count || 0,
+      });
       setLoading(false);
     }
 
@@ -285,11 +310,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      {/* FAB */}
-      <button onClick={() => navigate("/assistant")} className="tap fixed bottom-24 right-4 sm:right-8 w-12 h-12 rounded-full bg-electric shadow-lg flex items-center justify-center z-40">
-        <Bot size={20} className="text-white" />
-      </button>
       <div className="h-2" />
     </div>
   );

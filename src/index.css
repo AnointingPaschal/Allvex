@@ -12,7 +12,7 @@ html, body, #root {
 body {
   margin: 0;
   font-family: 'Inter', 'Roboto', -apple-system, sans-serif;
-  background: #EDF0F4;
+  background: #ffffff;
   color: #0F172A;
   -webkit-font-smoothing: antialiased;
 }
@@ -21,7 +21,7 @@ body {
 .app-shell {
   width: 100%;
   min-height: 100vh;
-  background: #F6F8FB;
+  background: #ffffff;
   position: relative;
   display: flex;
   flex-direction: column;

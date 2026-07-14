@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import BottomNav from "./components/BottomNav.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import RequireRole from "./components/RequireRole.jsx";
@@ -24,14 +24,34 @@ import InspectorPortal from "./portal/inspector/InspectorPortal.jsx";
 import SupportPortal from "./portal/support/SupportPortal.jsx";
 
 const PORTAL_PREFIXES = ["/portals", "/admin", "/supplier", "/inspector", "/support"];
+const NO_NAV  = ["/onboarding", "/login", "/signup", "/checkout", "/import/request"];
+const NO_FAB  = ["/onboarding", "/login", "/signup", "/checkout", "/import/request", "/assistant"];
 
-// Pages that render full-screen (no bottom nav)
-const NO_NAV = ["/onboarding", "/login", "/signup", "/checkout", "/import/request"];
+function AIFab() {
+  const navigate = useNavigate();
+  return (
+    <button
+      onClick={() => navigate("/assistant")}
+      className="tap fixed z-50 flex items-center justify-center shadow-lg"
+      style={{ bottom: "calc(72px + env(safe-area-inset-bottom) + 12px)", right: 16, width: 46, height: 46, borderRadius: 23, background: "linear-gradient(135deg,#1E40AF 0%,#3B82F6 100%)" }}
+      title="Ask AI"
+    >
+      {/* Sparkle AI icon */}
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4L12 2z"
+          fill="white" opacity="0.95"/>
+        <circle cx="19" cy="5" r="1.5" fill="white" opacity="0.7"/>
+        <circle cx="5" cy="19" r="1" fill="white" opacity="0.5"/>
+      </svg>
+    </button>
+  );
+}
 
 export default function App() {
   const location = useLocation();
   const isPortal = PORTAL_PREFIXES.some((p) => location.pathname.startsWith(p));
   const noNav = NO_NAV.some((p) => location.pathname.startsWith(p));
+  const noFab = NO_FAB.some((p) => location.pathname.startsWith(p));
 
   if (isPortal) {
     return (
@@ -67,6 +87,7 @@ export default function App() {
         </Routes>
       </div>
       {!noNav && <BottomNav />}
+      {!noNav && !noFab && <AIFab />}
     </div>
   );
 }
