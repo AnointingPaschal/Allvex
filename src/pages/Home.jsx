@@ -13,7 +13,7 @@ const levelStyles = {
 };
 
 const quickActions = [
-  { icon: Car, label: "Import Vehicle", desc: "Find your next car", to: "/marketplace" },
+  { icon: Car, label: "Import Vehicle", desc: "Find your next car", to: "/import/request" },
   { icon: Wrench, label: "Garage", desc: "Manage vehicles", to: "/garage" },
   { icon: Truck, label: "Track Import", desc: "Shipment status", to: "/import" },
   { icon: Bot, label: "Ask AI", desc: "Instant answers", to: "/assistant" },

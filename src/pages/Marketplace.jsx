@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal, Heart, GitCompareArrows, BadgeCheck, ShoppingCart, Plus, Minus, X, Star, Check, Loader2 } from "lucide-react";
 import VehicleArt from "../components/VehicleArt.jsx";
 import { supabase } from "../lib/supabase.js";
+import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const categories = ["All", "SUV", "Sedan", "Electric", "Pickup", "Luxury"];
@@ -13,7 +14,7 @@ export default function Marketplace() {
   const [tab, setTab] = useState("vehicles");
   const [active, setActive] = useState("All");
   const [query, setQuery] = useState("");
-  const [cart, setCart] = useState({});
+  const { add: addToCart, list: cartList, count: cartCount, total: cartTotal, setQty: changeQty, remove: removeFromCart, clear } = useCart();
   const [showCart, setShowCart] = useState(false);
   const [justAdded, setJustAdded] = useState(null);
   const [checkoutDone, setCheckoutDone] = useState(false);
@@ -56,45 +57,18 @@ export default function Marketplace() {
     return accessories.filter((a) => a.name.toLowerCase().includes(query.toLowerCase()));
   }, [accessories, query]);
 
-  function addToCart(id) {
-    setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
-    setJustAdded(id);
-    setTimeout(() => setJustAdded((cur) => (cur === id ? null : cur)), 1200);
-  }
-  function changeQty(id, delta) {
-    setCart((c) => {
-      const next = { ...c, [id]: Math.max(0, (c[id] || 0) + delta) };
-      if (next[id] === 0) delete next[id];
-      return next;
-    });
+  function handleAddToCart(product) {
+    addToCart(product);
+    setJustAdded(product.id);
+    setTimeout(() => setJustAdded((cur) => (cur === product.id ? null : cur)), 1200);
   }
 
-  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
-  const cartItems = Object.entries(cart).map(([id, qty]) => ({ ...accessories.find((a) => a.id === id), qty }));
-  const cartTotal = cartItems.reduce((sum, i) => sum + Number(i.price) * i.qty, 0);
+  const cartItems = cartList.map((i) => ({ ...i.product, qty: i.qty }));
 
-  async function checkout() {
-    if (!profile || cartItems.length === 0) return;
-    setCheckingOut(true);
-    const { data: order, error } = await supabase
-      .from("accessory_orders")
-      .insert({ customer_id: profile.id, total: cartTotal, status: "placed" })
-      .select()
-      .single();
-
-    if (!error && order) {
-      await supabase.from("accessory_order_items").insert(
-        cartItems.map((i) => ({ order_id: order.id, accessory_id: i.id, quantity: i.qty, unit_price: i.price }))
-      );
-    }
-
-    setCheckingOut(false);
-    setCheckoutDone(true);
-    setCart({});
-    setTimeout(() => {
-      setShowCart(false);
-      setCheckoutDone(false);
-    }, 2200);
+  function checkout() {
+    if (cartItems.length === 0) return;
+    setShowCart(false);
+    navigate("/checkout");
   }
 
   if (loading) {
@@ -215,7 +189,7 @@ export default function Marketplace() {
         <>
           <div className="px-4 sm:px-6 lg:px-8 mt-3.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {filteredAccessories.map((a) => (
-              <div key={a.id} className="bg-white rounded-xl shadow-card overflow-hidden flex flex-col">
+              <div key={a.id} className="bg-white rounded-xl shadow-card overflow-hidden flex flex-col cursor-pointer" onClick={() => navigate(`/accessories/${a.id}`)}>
                 <VehicleArt category="default" src={a.image_url} className="h-24 w-full" iconSize={22} />
                 <div className="p-2.5 flex-1 flex flex-col">
                   <p className="font-semibold text-midnight text-[11.5px] truncate">{a.name}</p>
@@ -225,7 +199,7 @@ export default function Marketplace() {
                   </div>
                   <p className="text-[12px] font-bold text-electric mt-1">₦{Number(a.price).toLocaleString()}</p>
                   <button
-                    onClick={() => addToCart(a.id)}
+                    onClick={(e) => { e.stopPropagation(); handleAddToCart(a); }}
                     className={`tap mt-2 w-full py-2 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 ${
                       justAdded === a.id ? "bg-success text-white" : "bg-midnight text-white"
                     }`}
@@ -284,11 +258,11 @@ export default function Marketplace() {
                       <p className="text-[11.5px] font-bold text-electric mt-0.5">₦{Number(item.price).toLocaleString()}</p>
                     </div>
                     <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-1.5 py-1">
-                      <button onClick={() => changeQty(item.id, -1)} className="tap w-6 h-6 flex items-center justify-center">
+                      <button onClick={() => changeQty(item.id, item.qty - 1)} className="tap w-6 h-6 flex items-center justify-center">
                         <Minus size={12} className="text-midnight" />
                       </button>
                       <span className="text-[12px] font-semibold w-4 text-center">{item.qty}</span>
-                      <button onClick={() => changeQty(item.id, 1)} className="tap w-6 h-6 flex items-center justify-center">
+                      <button onClick={() => changeQty(item.id, item.qty + 1)} className="tap w-6 h-6 flex items-center justify-center">
                         <Plus size={12} className="text-midnight" />
                       </button>
                     </div>
@@ -302,11 +276,9 @@ export default function Marketplace() {
 
                 <button
                   onClick={checkout}
-                  disabled={checkingOut}
-                  className="tap w-full py-3 rounded-xl bg-electric text-white font-semibold text-[13px] mt-1 flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="tap w-full py-3 rounded-xl bg-electric text-white font-semibold text-[13px] mt-1"
                 >
-                  {checkingOut && <Loader2 size={14} className="animate-spin" />}
-                  {checkingOut ? "Placing order..." : "Checkout"}
+                  Proceed to Checkout
                 </button>
               </div>
             )}

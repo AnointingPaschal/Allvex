@@ -478,3 +478,59 @@ create policy "notifications_owner" on notifications for all
 
 -- Add gallery support to garage vehicles (run this in SQL Editor if schema already applied)
 alter table garage_vehicles add column if not exists gallery_urls jsonb not null default '[]';
+
+-- ── Accessory enhancements ──────────────────────────────────────────────────
+alter table accessories add column if not exists description text;
+alter table accessories add column if not exists gallery_urls jsonb not null default '[]';
+
+-- ── Order shipping + payment fields ────────────────────────────────────────
+alter table accessory_orders add column if not exists shipping_name text;
+alter table accessory_orders add column if not exists shipping_phone text;
+alter table accessory_orders add column if not exists shipping_address text;
+alter table accessory_orders add column if not exists shipping_city text;
+alter table accessory_orders add column if not exists shipping_state text;
+alter table accessory_orders add column if not exists payment_method text default 'manual';
+alter table accessory_orders add column if not exists payment_reference text;
+
+-- ── Platform settings (payment keys, site config) ─────────────────────────
+create table if not exists platform_settings (
+  key text primary key,
+  value text,
+  updated_at timestamptz not null default now()
+);
+alter table platform_settings enable row level security;
+create policy "admins manage settings" on platform_settings for all
+  using (public.current_role() = 'admin');
+create policy "public read settings" on platform_settings for select using (true);
+
+-- Default payment settings
+insert into platform_settings (key, value) values
+  ('paystack_public_key', ''),
+  ('flutterwave_public_key', ''),
+  ('manual_bank_name', 'First Bank Nigeria'),
+  ('manual_account_number', '0123456789'),
+  ('manual_account_name', 'Allvex Automotive Ltd'),
+  ('payment_enabled_paystack', 'true'),
+  ('payment_enabled_flutterwave', 'true'),
+  ('payment_enabled_manual', 'true')
+on conflict (key) do nothing;
+
+-- ── Import requests (customers initiate) ───────────────────────────────────
+create table if not exists import_requests (
+  id uuid primary key default uuid_generate_v4(),
+  customer_id uuid not null references profiles(id) on delete cascade,
+  brand text,
+  model text,
+  year int,
+  color text,
+  budget text,
+  fuel text,
+  transmission text,
+  notes text,
+  reference_url text,
+  status text not null default 'pending',
+  created_at timestamptz not null default now()
+);
+alter table import_requests enable row level security;
+create policy "customers see own requests" on import_requests for all
+  using (customer_id = auth.uid() or public.current_role() in ('admin', 'support'));

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import TopBar from "../components/TopBar.jsx";
 import VehicleArt from "../components/VehicleArt.jsx";
 import StageTimeline from "../components/StageTimeline.jsx";
+import FileUpload from "../components/FileUpload.jsx";
 import { supabase } from "../lib/supabase.js";
 import {
   Gauge, ShieldCheck, FileText, Wallet, Plus, Droplet, Wrench,
@@ -30,7 +31,11 @@ export default function GarageVehicle() {
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [showAddDoc, setShowAddDoc] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Edit form state
+  const [editForm, setEditForm] = useState({ nickname: "", brand: "", model: "", year: "", color: "", plate: "", mileage: "", insurance_status: "", image_url: "" });
 
   const [reminderForm, setReminderForm] = useState({ title: "", km: "", months: "" });
   const [docForm, setDocForm] = useState({ name: "" });
@@ -48,6 +53,10 @@ export default function GarageVehicle() {
     setReminders(remRes.data || []);
     setDocuments(docRes.data || []);
     setExpenses(expRes.data || []);
+    if (vRes.data) {
+      const d = vRes.data;
+      setEditForm({ nickname: d.nickname || "", brand: d.brand || "", model: d.model || "", year: String(d.year || ""), color: d.color || "", plate: d.plate || "", mileage: String(d.mileage || ""), insurance_status: d.insurance_status || "", image_url: d.image_url || "" });
+    }
     setLoading(false);
   }
 
@@ -67,6 +76,25 @@ export default function GarageVehicle() {
     setSaving(false);
     setShowAddReminder(false);
     setReminderForm({ title: "", km: "", months: "" });
+    load();
+  }
+
+  async function saveEdit() {
+    if (!editForm.nickname.trim() || !editForm.brand.trim()) return;
+    setSaving(true);
+    await supabase.from("garage_vehicles").update({
+      nickname: editForm.nickname.trim(),
+      brand: editForm.brand.trim(),
+      model: editForm.model.trim(),
+      year: Number(editForm.year) || v.year,
+      color: editForm.color.trim() || null,
+      plate: editForm.plate.trim() || null,
+      mileage: Number(editForm.mileage) || 0,
+      insurance_status: editForm.insurance_status.trim() || null,
+      image_url: editForm.image_url || null,
+    }).eq("id", id);
+    setSaving(false);
+    setShowEdit(false);
     load();
   }
 
@@ -125,7 +153,11 @@ export default function GarageVehicle() {
 
   return (
     <div className="pb-10">
-      <TopBar title={v.nickname} right={<MoreHorizontal size={19} className="text-midnight" />} />
+      <TopBar title={v.nickname} right={
+        <button onClick={() => setShowEdit(true)} className="tap flex items-center gap-1.5 text-[11.5px] font-semibold text-electric bg-blue-50 px-3 py-1.5 rounded-lg">
+          Edit
+        </button>
+      } />
       {v.image_url ? (
         <img src={v.image_url} alt={v.nickname} className="h-32 sm:h-44 w-full object-cover" />
       ) : (
@@ -316,6 +348,49 @@ export default function GarageVehicle() {
           <SaveButton onClick={submitExpense} saving={saving} label="Save Expense" />
         </Modal>
       )}
+
+      {/* ── Edit Vehicle Modal ── */}
+      {showEdit && (
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={() => !saving && setShowEdit(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white w-full sm:w-[480px] sm:rounded-2xl rounded-t-[28px] max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white rounded-t-[28px] sm:rounded-t-2xl flex items-center justify-between px-5 pt-5 pb-3.5 border-b border-slate-100 z-10">
+              <h3 className="text-[16px] font-bold text-midnight">Edit Vehicle</h3>
+              <button onClick={() => setShowEdit(false)} className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center">
+                <X size={15} className="text-slate-500" />
+              </button>
+            </div>
+
+            <div className="px-5 py-4 space-y-4 pb-7">
+              <div>
+                <label className="text-[11.5px] font-semibold text-slate-400 uppercase tracking-wide block mb-2">Vehicle Photo</label>
+                <FileUpload value={editForm.image_url} onChange={(url) => setEditForm((f) => ({ ...f, image_url: url }))} folder="garage-main" />
+              </div>
+
+              <div>
+                <label className="text-[11.5px] font-semibold text-slate-400 uppercase tracking-wide block mb-2.5">Details</label>
+                <div className="space-y-2.5">
+                  <EInput placeholder="Nickname (e.g. My Seal)" value={editForm.nickname} onChange={(v) => setEditForm((f) => ({ ...f, nickname: v }))} />
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <EInput placeholder="Brand" value={editForm.brand} onChange={(v) => setEditForm((f) => ({ ...f, brand: v }))} />
+                    <EInput placeholder="Model" value={editForm.model} onChange={(v) => setEditForm((f) => ({ ...f, model: v }))} />
+                    <EInput placeholder="Year" value={editForm.year} onChange={(v) => setEditForm((f) => ({ ...f, year: v }))} />
+                    <EInput placeholder="Color" value={editForm.color} onChange={(v) => setEditForm((f) => ({ ...f, color: v }))} />
+                    <EInput placeholder="Plate number" value={editForm.plate} onChange={(v) => setEditForm((f) => ({ ...f, plate: v }))} />
+                    <EInput placeholder="Mileage (km)" value={editForm.mileage} onChange={(v) => setEditForm((f) => ({ ...f, mileage: v }))} />
+                  </div>
+                  <EInput placeholder="Insurance status (e.g. Expires Dec 2025)" value={editForm.insurance_status} onChange={(v) => setEditForm((f) => ({ ...f, insurance_status: v }))} />
+                </div>
+              </div>
+
+              <button onClick={saveEdit} disabled={saving || !editForm.nickname.trim()}
+                className="tap w-full py-4 rounded-xl bg-electric text-white font-bold text-[14.5px] flex items-center justify-center gap-2 disabled:opacity-50">
+                {saving && <Loader2 size={15} className="animate-spin" />}
+                {saving ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -362,5 +437,12 @@ function SaveButton({ onClick, saving, label }) {
       {saving && <Loader2 size={14} className="animate-spin" />}
       {saving ? "Saving..." : label}
     </button>
+  );
+}
+
+function EInput({ value, onChange, placeholder }) {
+  return (
+    <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-3 text-[13.5px] outline-none focus:border-electric focus:ring-2 focus:ring-electric/10 transition placeholder:text-slate-300" />
   );
 }
